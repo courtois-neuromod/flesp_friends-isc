@@ -88,13 +88,15 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
     mask_fnames = []
     for sub_dirs in data_dict:
         for ses in data_dict[sub_dirs]:
+            print(glob.glob(f'{data_dir}/{sub}/{ses}/*'
+                            'MNI152NLin2009cAsym_desc-preproc_bold.nii.*'))
             nifti_fnames.extend(glob.glob(f'{data_dir}/{sub}/{ses}/*'
                                 'MNI152NLin2009cAsym_desc-preproc_bold.nii.*'))
             mask_fnames.extend(glob.glob(f'{data_dir}/{sub}/{ses}/*'
                                          'MNI152NLin2009cAsym_desc-brain_mask'
                                          '.nii.gz'))
     if verbose:
-        pprintpp.pprint(nifti_fnames)
+        pprintpp.pprint(data_dict)
 
     return nifti_fnames, mask_fnames
 
@@ -110,7 +112,7 @@ def multisubject_process_episodes(nifti_fnames, output_filepath, episodes,
 
     Parameters
     ----------
-    nifti_fnames [dictionary]:
+    nifti_fnames [list]:
         returned by create_data_dictionary
     output_filepath [path]:
         output path
@@ -185,8 +187,8 @@ def main(input_filepath, output_filepath):
     logger.info(f'Looking for data in :{data_dir}')
     nifti_names, mask_names = create_data_dictionary(
             data_dir, verbose=True)
-    episodes = list(pd.read_csv(f'{project_dir}/episodes.csv',
-                    delimiter=',').T)
+    episodes = pd.read_csv(f'{project_dir}/episodes.csv',
+                    delimiter=',')
     pprintpp.pprint(episodes)
     #multisubject_process_episodes(nifti_names, output_filepath, episodes,
      #                             mask_names, fwhm=6, roi=False)
