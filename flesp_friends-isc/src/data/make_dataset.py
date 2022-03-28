@@ -67,15 +67,14 @@ def create_data_dictionary(data_dir, sessions, verbose=False):
     """
     data_dict = {}
     subs = []
-    print(glob.glob(f'{data_dir}/sub-*/'))
     for sub in glob.glob(f'{data_dir}/sub-*/'):
-        subs.append(os.path.basename(sub))
+        subs.append(sub[-6:])
     print(subs)
     if sessions is None:
         sessions = []
         for sub in subs:
             for ses in glob.glob(f'{data_dir}{sub}/ses-*/'):
-                sessions.append(os.path.basename(ses))
+                sessions.append(ses[-7:])
             data_dict[sub] = sessions
     else:
         for sub in subs:
@@ -152,13 +151,14 @@ def multisubject_process_episodes(nifti_fnames, output_filepath, episodes,
         # convert NaNs to zero0
         masked_images[task_name][np.isnan(masked_images[task_name])] = 0
         # print the shape
-        logger.info(f"Data : {task_name} \t"
-                    f'shape:{np.shape(masked_images[task_name])}')
+        print(f"Data : {task_name} \t"
+              f'shape:{np.shape(masked_images[task_name])}')
 
         tmpl = 'space-MNI152NLin2009cAsym_desc-preproc_bold'
         if roi:
             tmpl = 'ROI_atlas_harvard_oxford' + tmpl
-        postproc_fname = str(f'{task_name}/{MultiSubject}_task-{task_name}_'
+        postproc_fname = str(f'{task_name}/{masked_images[task_name]}'
+                             f'_task-{task_name}_'
                              f'{tmpl}.hdf5').replace('desc-preproc',
                                                      f'desc-fwhm{fwhm}')
 
@@ -182,8 +182,8 @@ def main(input_filepath, output_filepath):
     logger.info(f'Looking for data in :{data_dir}')
     nifti_names, mask_names = create_data_dictionary(
             data_dir, output_filepath, verbose=True)
-    episodes = pd.read_csv(f'{project_dir}/episodes.csv',
-                           delimiter=',')
+    episodes = list(pd.read_csv(f'{project_dir}/episodes.csv',
+                       delimiter=','))
     pprintpp.pprint(episodes)
     #multisubject_process_episodes(nifti_names, output_filepath, episodes,
      #                             mask_names, fwhm=6, roi=False)
