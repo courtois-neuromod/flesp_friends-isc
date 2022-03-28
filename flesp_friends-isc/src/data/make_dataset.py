@@ -69,12 +69,14 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
     subs = []
     for sub in glob.glob(f'{data_dir}/sub-*/'):
         subs.append(sub[-7:-1])
+        subs.sort()
     print(subs)
     if sessions is None:
         sessions = []
         for sub in subs:
             for ses in glob.glob(f'{data_dir}/{sub}/ses-*/'):
                 sessions.append(ses[-8:-1])
+                sessions.sort()
             print(sessions)
             data_dict[sub] = sessions
     else:
@@ -92,7 +94,7 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
                                          'MNI152NLin2009cAsym_desc-brain_mask'
                                          '.nii.gz'))
     if verbose:
-        pprintpp.pprint(data_dict)
+        pprintpp.pprint(nifti_fnames)
 
     return nifti_fnames, mask_fnames
 
@@ -184,7 +186,7 @@ def main(input_filepath, output_filepath):
     nifti_names, mask_names = create_data_dictionary(
             data_dir, verbose=True)
     episodes = list(pd.read_csv(f'{project_dir}/episodes.csv',
-                    delimiter=','))
+                    delimiter=',').T)
     pprintpp.pprint(episodes)
     #multisubject_process_episodes(nifti_names, output_filepath, episodes,
      #                             mask_names, fwhm=6, roi=False)
