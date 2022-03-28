@@ -8,6 +8,7 @@ import glob
 import fnmatch
 import pprintpp
 import numpy as np
+import pandas as pd
 
 
 from nilearn.maskers import MultiNiftiMasker, NiftiLabelsMasker
@@ -52,7 +53,7 @@ def multi_nifti_mask(scans, masks, confounds, fwhm=None, roi=False):
     return maskers.inverse_transform(cleaned)
 
 
-def create_data_dictionary(data_dir, subs, sessions, verbose=False):
+def create_data_dictionary(data_dir, sessions, verbose=False):
     """
     Get all the participant file names
 
@@ -65,11 +66,11 @@ def create_data_dictionary(data_dir, subs, sessions, verbose=False):
     nifti_fnames, mask_fnames [list]: file names for all subjs
     """
     data_dict = {}
-    if subs is None:
-        subs = []
-        for sub in glob.glob(f'{data_dir}sub-*/'):
-            subs.append(os.path.basename(sub))
-
+    subs = []
+    print(glob.glob(f'{data_dir}/sub-*/'))
+    for sub in glob.glob(f'{data_dir}/sub-*/'):
+        subs.append(os.path.basename(sub))
+    print(subs)
     if sessions is None:
         sessions = []
         for sub in subs:
@@ -180,10 +181,12 @@ def main(input_filepath, output_filepath):
     data_dir = os.path.join(project_dir, input_filepath)
     logger.info(f'Looking for data in :{data_dir}')
     nifti_names, mask_names = create_data_dictionary(
-            data_dir, output_filepath, subs=subs, verbose=True)
-    episodes = list(np.loadtxt(f'{project_dir}src/data/episodes.csv'))
-    multisubject_process_episodes(nifti_names, output_filepath, episodes,
-                                  mask_names, fwhm=6, roi=False)
+            data_dir, output_filepath, verbose=True)
+    episodes = pd.read_csv(f'{project_dir}/episodes.csv',
+                           delimiter=',')
+    pprintpp.pprint(episodes)
+    #multisubject_process_episodes(nifti_names, output_filepath, episodes,
+     #                             mask_names, fwhm=6, roi=False)
 
 
 if __name__ == '__main__':
@@ -197,5 +200,5 @@ if __name__ == '__main__':
     # find .env automagically by walking up directories until it's found, then
     # load up the .env entries as environment variables
     load_dotenv(find_dotenv())
-    subs = ['sub-01', 'sub-02', 'sub-03', 'sub-04', 'sub-05', 'sub-06']
+    #subs = ['sub-01', 'sub-02', 'sub-03', 'sub-04', 'sub-05', 'sub-06']
     main()
