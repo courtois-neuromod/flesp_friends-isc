@@ -168,6 +168,7 @@ def multisubject_process_episodes(nifti_fnames, output_filepath, episodes,
     del images
     nib.save(masked_images[task_name], os.path.join(output_filepath,
                                                     postproc_fname))
+    print(f"Saved {task_name} under: {postproc_fname}")
     return postproc_fname
 
 
