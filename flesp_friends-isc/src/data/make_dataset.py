@@ -53,7 +53,7 @@ def multi_nifti_mask(scans, masks, confounds, fwhm=None, roi=False):
     return maskers.inverse_transform(cleaned)
 
 
-def create_data_dictionary(data_dir, sessions, verbose=False):
+def create_data_dictionary(data_dir, sessions=None, verbose=False):
     """
     Get all the participant file names
 
