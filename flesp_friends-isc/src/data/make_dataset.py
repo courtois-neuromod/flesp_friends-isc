@@ -68,13 +68,12 @@ def create_data_dictionary(data_dir, sessions, verbose=False):
     data_dict = {}
     subs = []
     for sub in glob.glob(f'{data_dir}/sub-*/'):
-        subs.append(sub[-6:])
-    print(subs)
+        subs.append(sub[-7:])
     if sessions is None:
         sessions = []
         for sub in subs:
             for ses in glob.glob(f'{data_dir}{sub}/ses-*/'):
-                sessions.append(ses[-7:])
+                sessions.append(ses[-8:])
             data_dict[sub] = sessions
     else:
         for sub in subs:
