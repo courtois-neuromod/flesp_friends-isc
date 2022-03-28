@@ -85,7 +85,7 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
     nifti_fnames = []
     mask_fnames = []
     for sub_dirs in data_dict:
-        for ses in data_dict[sub_dirs]:           
+        for ses in data_dict[sub_dirs]:
             nifti_fnames.extend(glob.glob(f'{data_dir}/{sub}/{ses}/func/*'
                                 'MNI152NLin2009cAsym_desc-preproc_bold.nii.*'))
             mask_fnames.extend(glob.glob(f'{data_dir}/{sub}/{ses}/func/*'
@@ -134,6 +134,7 @@ def multisubject_process_episodes(nifti_fnames, output_filepath, episodes,
     confs = {}
 
     for task_name in episodes:
+        print(f"processing {task_name}")
         # list data as dict values for each sub and each item is episode
         fnames[task_name] = fnmatch.filter(nifti_fnames, f'*{task_name}*')
         # loads confounds files
@@ -184,11 +185,11 @@ def main(input_filepath, output_filepath):
     logger.info(f'Looking for data in :{data_dir}')
     nifti_names, mask_names = create_data_dictionary(
             data_dir, verbose=True)
-    episodes = pd.read_csv(f'{project_dir}/episodes.csv',
-                    delimiter=',')
-    pprintpp.pprint(episodes)
-    #multisubject_process_episodes(nifti_names, output_filepath, episodes,
-     #                             mask_names, fwhm=6, roi=False)
+    episodes = list(pd.read_csv(f'{project_dir}/episodes.csv',
+                                delimiter=',').iloc[:, 0])
+
+    multisubject_process_episodes(nifti_names, output_filepath, episodes,
+                                  mask_names, fwhm=6, roi=False)
 
 
 if __name__ == '__main__':
