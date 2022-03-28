@@ -1,0 +1,5 @@
+[submodule "data/cneuromod_new"]
+	path = data/cneuromod_new
+	url = /lustre03/project/6003287/datasets/cneuromod
+	datalad-id = 29e74738-8e09-11ea-80eb-8555360247cd
+	datalad-url = /lustre03/project/6003287/datasets/cneuromod
