@@ -85,9 +85,9 @@ def create_data_dictionary(data_dir, subs, sessions, verbose=False):
     mask_fnames = []
     for sub_dirs in data_dict:
         for ses in data_dict[sub_dirs]:
-            nifti_fnames.extend(glob.glob(f'{data_dir}{dataset}{sub}/{ses}/*'
+            nifti_fnames.extend(glob.glob(f'{data_dir}/{sub}/{ses}/*'
                                 'MNI152NLin2009cAsym_desc-preproc_bold.nii.*'))
-            mask_fnames.extend(glob.glob(f'{data_dir}{dataset}{sub}/{ses}/*'
+            mask_fnames.extend(glob.glob(f'{data_dir}/{sub}/{ses}/*'
                                          'MNI152NLin2009cAsym_desc-brain_mask'
                                          '.nii.gz'))
     if verbose:
@@ -176,6 +176,7 @@ def main(input_filepath, output_filepath):
     """
     logger = logging.getLogger(__name__)
     logger.info('making final data set from raw data')
+    project_dir = Path(__file__).resolve().parents[2]
     data_dir = os.path.join(project_dir, input_filepath)
     logger.info(f'Looking for data in :{data_dir}')
     nifti_names, mask_names = create_data_dictionary(
