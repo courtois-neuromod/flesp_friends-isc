@@ -74,6 +74,7 @@ def create_data_dictionary(data_dir, sessions, verbose=False):
         for sub in subs:
             for ses in glob.glob(f'{data_dir}{sub}/ses-*/'):
                 sessions.append(ses[-8:])
+            print(sessions)
             data_dict[sub] = sessions
     else:
         for sub in subs:
@@ -180,9 +181,9 @@ def main(input_filepath, output_filepath):
     data_dir = os.path.join(project_dir, input_filepath)
     logger.info(f'Looking for data in :{data_dir}')
     nifti_names, mask_names = create_data_dictionary(
-            data_dir, output_filepath, verbose=True)
+            data_dir, verbose=True)
     episodes = list(pd.read_csv(f'{project_dir}/episodes.csv',
-                       delimiter=','))
+                    delimiter=','))
     pprintpp.pprint(episodes)
     #multisubject_process_episodes(nifti_names, output_filepath, episodes,
      #                             mask_names, fwhm=6, roi=False)
