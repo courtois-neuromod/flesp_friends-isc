@@ -85,16 +85,15 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
     nifti_fnames = []
     mask_fnames = []
     for sub_dirs in data_dict:
-        for ses in data_dict[sub_dirs]:
-            print(glob.glob(f'{data_dir}/{sub}/{ses}/*'
-                            'MNI152NLin2009cAsym_desc-preproc_bold.nii.*'))
-            nifti_fnames.extend(glob.glob(f'{data_dir}/{sub}/{ses}/*'
+        for ses in data_dict[sub_dirs]:           
+            nifti_fnames.extend(glob.glob(f'{data_dir}/{sub}/{ses}/func/*'
                                 'MNI152NLin2009cAsym_desc-preproc_bold.nii.*'))
-            mask_fnames.extend(glob.glob(f'{data_dir}/{sub}/{ses}/*'
+            mask_fnames.extend(glob.glob(f'{data_dir}/{sub}/{ses}/func/*'
                                          'MNI152NLin2009cAsym_desc-brain_mask'
                                          '.nii.gz'))
     if verbose:
         pprintpp.pprint(data_dict)
+        pprintpp.pprint(nifti_fnames)
 
     return nifti_fnames, mask_fnames
 
