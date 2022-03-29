@@ -94,7 +94,6 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
                                          '.nii.gz'))
     if verbose:
         pprintpp.pprint(data_dict)
-   
 
     return nifti_fnames, mask_fnames
 
@@ -138,8 +137,7 @@ def multisubject_process_episodes(nifti_fnames, output_filepath, episodes,
         print(f"processing {task_name}")
         # list data as dict values for each sub and each item is episode
         fnames[task_name] = fnmatch.filter(nifti_fnames, f'*{task_name}*')
-        if fnames[task_name] == []:
-            continue
+
         # loads confounds files
         confs[task_name] = load_confounds_strategy(fnames[task_name],
                                                    denoise_strategy='simple',
@@ -190,7 +188,7 @@ def main(input_filepath, output_filepath):
     nifti_names, mask_names = create_data_dictionary(
             data_dir, verbose=False)
     episodes = list(pd.read_csv(f'{project_dir}/episodes.csv',
-                                delimiter=',').iloc[:, 0])
+                                delimiter=',', header=None).iloc[:, 0])[0]
 
     multisubject_process_episodes(nifti_names, output_filepath, episodes,
                                   mask_names, fwhm=6, roi=False)
