@@ -44,11 +44,12 @@ def multi_nifti_mask(scans, masks, confounds, fwhm, roi=False):
                                     high_pass=0.01, low_pass=0.1,
                                     smoothing_fwhm=fwhm)
     else:
+        print(masks)
         maskers = MultiNiftiMasker(mask_img=masks, t_r=1.49,
                                    standardize=False, detrend=True,
                                    high_pass=0.01, low_pass=0.1,
                                    smoothing_fwhm=fwhm)
-
+    print(maskers, scans)
     cleaned = maskers.fit_transform(scans, confounds=confounds)
     return maskers.inverse_transform(cleaned)
 
@@ -93,6 +94,7 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
                                          '.nii.gz'))
     if verbose:
         pprintpp.pprint(data_dict)
+   
 
     return nifti_fnames, mask_fnames
 
@@ -136,6 +138,8 @@ def multisubject_process_episodes(nifti_fnames, output_filepath, episodes,
         print(f"processing {task_name}")
         # list data as dict values for each sub and each item is episode
         fnames[task_name] = fnmatch.filter(nifti_fnames, f'*{task_name}*')
+        if fnames[task_name] == []:
+            continue
         # loads confounds files
         confs[task_name] = load_confounds_strategy(fnames[task_name],
                                                    denoise_strategy='simple',
