@@ -119,12 +119,9 @@ def process_episodewise(fnames, output_filepath, task_name,
     # NOTE : consider making group assigments for bootsraps
     # group_assignment_dict =
     # {task_name: i for i, task_name in enumerate(episodes)}
-    confs = []
     # loads confounds files
-    for nii in fnames:
-        conf = load_confounds_strategy(nii, denoise_strategy='simple',
+    confs = load_confounds_strategy(os.path(fnames), denoise_strategy='simple',
                                        motion='basic')
-        confs.append(conf)
     images = io.load_images(fnames)
 
     masked_images = nifti_mask(scans=images,
