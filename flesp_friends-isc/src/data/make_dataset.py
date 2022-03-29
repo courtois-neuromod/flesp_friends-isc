@@ -122,7 +122,9 @@ def process_episodewise(fnames, output_filepath, task_name,
     confs = []
     # loads confounds files
     for nii in fnames:
-        confs.append(load_confounds_strategy(nii, denoise_strategy='simple',
+        path, nii = os.path.split(nii)
+        confs.append(load_confounds_strategy(path, nii,
+                                             denoise_strategy='simple',
                                              global_signal='basic'))
     images = io.load_images(fnames)
 
@@ -138,13 +140,11 @@ def process_episodewise(fnames, output_filepath, task_name,
     print(f"Data : {task_name} \t"
           f'shape:{np.shape(masked_images[task_name])}')
 
-    tmpl = 'space-MNI152NLin2009cAsym_desc-preproc_bold'
+    tmpl = f'space-MNI152NLin2009cAsym_desc-fwhm{fwhm}'
     if roi:
         tmpl = 'ROI_atlas_harvard_oxford' + tmpl
     postproc_fname = str(f'{task_name}/{masked_images}'
-                         f'_task-{task_name}_'
-                         f'{tmpl}.hdf5').replace('desc-preproc',
-                                                 f'desc-fwhm{fwhm}')
+                         f'_{task_name}_{tmpl}.hdf5')
 
     del images
     nib.save(masked_images[task_name], os.path.join(output_filepath,
@@ -165,18 +165,20 @@ def main(input_filepath, output_filepath):
     project_dir = Path(__file__).resolve().parents[2]
     data_dir = os.path.join(project_dir, input_filepath)
     logger.info(f'Looking for data in :{data_dir}')
-    nifti_names, mask_names = create_data_dictionary(
-            data_dir, verbose=False)
+    nifti_names, mask_names = create_data_dictionary(data_dir, verbose=False)
     episodes = list(pd.read_csv(f'{project_dir}/episodes.csv',
                                 delimiter=',', header=None).iloc[:, 0])
+    logger.info(f"Iterating through episodes : {episodes[:5]}...")
     # iterate through episodes
-    for task_name in episodes:
+    for task_name in episodes[:1]:
         logger.info(f'Processing : {task_name}')
         # list data as dict values for each sub and each item is episode
         fnames = fnmatch.filter(nifti_names, f'*{task_name}*')
         masks = fnmatch.filter(mask_names, f'*{task_name}*')
         process_episodewise(fnames, output_filepath, task_name,
                             masks, fwhm=6, roi=False)
+        logger.info(f'Done processing : {task_name} \n'
+                    '---------------------------------')
 
 
 if __name__ == '__main__':
