@@ -93,7 +93,6 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
                                          '.nii.gz'))
     if verbose:
         pprintpp.pprint(data_dict)
-        pprintpp.pprint(nifti_fnames)
 
     return nifti_fnames, mask_fnames
 
@@ -185,7 +184,7 @@ def main(input_filepath, output_filepath):
     data_dir = os.path.join(project_dir, input_filepath)
     logger.info(f'Looking for data in :{data_dir}')
     nifti_names, mask_names = create_data_dictionary(
-            data_dir, verbose=True)
+            data_dir, verbose=False)
     episodes = list(pd.read_csv(f'{project_dir}/episodes.csv',
                                 delimiter=',').iloc[:, 0])
 
