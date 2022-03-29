@@ -18,7 +18,7 @@ import nibabel as nib
 from brainiak import io
 
 
-def multi_nifti_mask(scans, masks, confounds, fwhm, roi=False):
+def nifti_mask(scans, masks, confounds, fwhm, roi=False):
     """
     Mask the images.
 
@@ -44,12 +44,10 @@ def multi_nifti_mask(scans, masks, confounds, fwhm, roi=False):
                                     high_pass=0.01, low_pass=0.1,
                                     smoothing_fwhm=fwhm)
     else:
-        print(masks)
         maskers = MultiNiftiMasker(mask_img=masks, t_r=1.49,
                                    standardize=False, detrend=True,
                                    high_pass=0.01, low_pass=0.1,
                                    smoothing_fwhm=fwhm)
-    print(maskers, scans)
     cleaned = maskers.fit_transform(scans, confounds=confounds)
     return maskers.inverse_transform(cleaned)
 
@@ -98,8 +96,8 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
     return nifti_fnames, mask_fnames
 
 
-def multisubject_process_episodes(nifti_fnames, output_filepath, episodes,
-                                  mask_fnames, fwhm, roi):
+def process_episodewise(fnames, output_filepath, task_name,
+                        masks, fwhm, roi):
     """
     Process episodes.
 
@@ -109,14 +107,10 @@ def multisubject_process_episodes(nifti_fnames, output_filepath, episodes,
 
     Parameters
     ----------
-    nifti_fnames [list]:
+    fnames [list]:
         returned by create_data_dictionary
     output_filepath [path]:
         output path
-    episodes [list]:
-        list given by csv file
-    mask_fnames [dictionary]:
-        returned by create_data_dictionary
     fwhm [int]:
         smoothing parameter
     roi [bool]: False
@@ -125,46 +119,32 @@ def multisubject_process_episodes(nifti_fnames, output_filepath, episodes,
     # NOTE : consider making group assigments for bootsraps
     # group_assignment_dict =
     # {task_name: i for i, task_name in enumerate(episodes)}
-    if episodes is None:
-        # write an error
-        raise ValueError('Missing episodes list')
-    fnames = {}
-    masked_images = {}
-    images = {}
-    confs = {}
+    confs = []
+    # loads confounds files
+    for nii in fnames:
+        confs.append(load_confounds_strategy(nii, denoise_strategy='simple',
+                                             global_signal='basic'))
+    images = io.load_images(fnames)
 
-    for task_name in episodes:
-        print(f"processing {task_name}")
-        # list data as dict values for each sub and each item is episode
-        fnames[task_name] = fnmatch.filter(nifti_fnames, f'*{task_name}*')
+    masked_images = nifti_mask(scans=images,
+                               masks=masks,
+                               confounds=confs,
+                               fwhm=fwhm,
+                               roi=roi)
 
-        # loads confounds files
-        confs[task_name] = load_confounds_strategy(fnames[task_name],
-                                                   denoise_strategy='simple',
-                                                   global_signal='basic')
-        images[task_name] = io.load_images(fnames[task_name])
+    # convert NaNs to zero0
+    masked_images[task_name][np.isnan(masked_images[task_name])] = 0
+    # print the shape
+    print(f"Data : {task_name} \t"
+          f'shape:{np.shape(masked_images[task_name])}')
 
-        masked_images[task_name] = multi_nifti_mask(
-                                scans=images[task_name],
-                                masks=fnmatch.filter(mask_fnames,
-                                                     f'*{task_name}*'),
-                                confounds=confs,
-                                fwhm=fwhm,
-                                roi=roi)
-
-        # convert NaNs to zero0
-        masked_images[task_name][np.isnan(masked_images[task_name])] = 0
-        # print the shape
-        print(f"Data : {task_name} \t"
-              f'shape:{np.shape(masked_images[task_name])}')
-
-        tmpl = 'space-MNI152NLin2009cAsym_desc-preproc_bold'
-        if roi:
-            tmpl = 'ROI_atlas_harvard_oxford' + tmpl
-        postproc_fname = str(f'{task_name}/{masked_images[task_name]}'
-                             f'_task-{task_name}_'
-                             f'{tmpl}.hdf5').replace('desc-preproc',
-                                                     f'desc-fwhm{fwhm}')
+    tmpl = 'space-MNI152NLin2009cAsym_desc-preproc_bold'
+    if roi:
+        tmpl = 'ROI_atlas_harvard_oxford' + tmpl
+    postproc_fname = str(f'{task_name}/{masked_images}'
+                         f'_task-{task_name}_'
+                         f'{tmpl}.hdf5').replace('desc-preproc',
+                                                 f'desc-fwhm{fwhm}')
 
     del images
     nib.save(masked_images[task_name], os.path.join(output_filepath,
@@ -188,10 +168,15 @@ def main(input_filepath, output_filepath):
     nifti_names, mask_names = create_data_dictionary(
             data_dir, verbose=False)
     episodes = list(pd.read_csv(f'{project_dir}/episodes.csv',
-                                delimiter=',', header=None).iloc[:, 0])[0]
-
-    multisubject_process_episodes(nifti_names, output_filepath, episodes,
-                                  mask_names, fwhm=6, roi=False)
+                                delimiter=',', header=None).iloc[:, 0])
+    # iterate through episodes
+    for task_name in episodes:
+        logger.info(f'Processing : {task_name}')
+        # list data as dict values for each sub and each item is episode
+        fnames = fnmatch.filter(nifti_names, f'*{task_name}*')
+        masks = fnmatch.filter(mask_names, f'*{task_name}*')
+        process_episodewise(fnames, output_filepath, task_name,
+                            masks, fwhm=6, roi=False)
 
 
 if __name__ == '__main__':
