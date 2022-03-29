@@ -18,7 +18,7 @@ import nibabel as nib
 from brainiak import io
 
 
-def multi_nifti_mask(scans, masks, confounds, fwhm=None, roi=False):
+def multi_nifti_mask(scans, masks, confounds, fwhm, roi=False):
     """
     Mask the images.
 
@@ -148,7 +148,7 @@ def multisubject_process_episodes(nifti_fnames, output_filepath, episodes,
                                 masks=fnmatch.filter(mask_fnames,
                                                      f'*{task_name}*'),
                                 confounds=confs,
-                                smoothing_fwhm=fwhm,
+                                fwhm=fwhm,
                                 roi=roi)
 
         # convert NaNs to zero0
