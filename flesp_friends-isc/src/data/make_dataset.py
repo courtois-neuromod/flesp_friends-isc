@@ -120,8 +120,8 @@ def process_episodewise(fnames, output_filepath, task_name,
     # group_assignment_dict =
     # {task_name: i for i, task_name in enumerate(episodes)}
     # loads confounds files
-    confs = load_confounds_strategy(os.path(fnames), denoise_strategy='simple',
-                                       motion='basic')
+    confs = load_confounds_strategy(fnames, denoise_strategy='simple',
+                                    motion='basic')
     images = io.load_images(fnames)
 
     masked_images = nifti_mask(scans=images,
