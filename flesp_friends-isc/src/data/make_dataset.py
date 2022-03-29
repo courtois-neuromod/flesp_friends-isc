@@ -124,8 +124,7 @@ def process_episodewise(fnames, output_filepath, task_name,
     for nii in fnames:
         path, nii = os.path.split(nii)
         confs.append(load_confounds_strategy(path, nii,
-                                             denoise_strategy='simple',
-                                             motion='basic'))
+                                             denoise_strategy='simple'))
     images = io.load_images(fnames)
 
     masked_images = nifti_mask(scans=images,
