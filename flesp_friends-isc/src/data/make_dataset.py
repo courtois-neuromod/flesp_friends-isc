@@ -120,8 +120,11 @@ def process_episodewise(fnames, output_filepath, task_name,
     # group_assignment_dict =
     # {task_name: i for i, task_name in enumerate(episodes)}
     # loads confounds files
-    confs = load_confounds_strategy(fnames, denoise_strategy='simple',
-                                    motion='basic')
+    confs = []
+    for nii in fnames:
+        conf = load_confounds_strategy(nii, denoise_strategy='simple',
+                                       motion='basic')
+        confs.append(conf)
     images = io.load_images(fnames)
 
     masked_images = nifti_mask(scans=images,
@@ -171,8 +174,13 @@ def main(input_filepath, output_filepath):
         # list data as dict values for each sub and each item is episode
         fnames = fnmatch.filter(nifti_names, f'*{task_name}*')
         masks = fnmatch.filter(mask_names, f'*{task_name}*')
-        process_episodewise(fnames, output_filepath, task_name,
-                            masks, fwhm=6, roi=False)
+        try:
+            process_episodewise(fnames, output_filepath, task_name,
+                                masks, fwhm=6, roi=False)
+        except ValueError:
+            logger.info(f"Cannot find confounds file : {task_name} \n"
+                        '---------------------------------')
+            continue
         logger.info(f'Done processing : {task_name} \n'
                     '---------------------------------')
 
