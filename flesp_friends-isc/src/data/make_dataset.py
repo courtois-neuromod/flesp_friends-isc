@@ -160,7 +160,11 @@ def process_episodewise(fnames, output_filepath, task_name,
         postproc_fname = str(f'{task_name}/{sub}'
                              f'_{task_name}_{tmpl}.nii.gz')
         fn = os.path.join(f"{output_filepath}", postproc_fname)
-        nib.save(img, fn)
+        try:
+            nib.save(img, fn)
+        except FileNotFoundError:
+            os.mkdir(f"{output_filepath}/{task_name}")
+            nib.save(img, fn)
         print(f"Saved {sub}, {task_name} under: {fn}")
     return postproc_fname
 
