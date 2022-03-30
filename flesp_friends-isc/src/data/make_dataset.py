@@ -13,7 +13,6 @@ from nilearn.maskers import MultiNiftiMasker, NiftiMasker, NiftiLabelsMasker
 from nilearn.interfaces.fmriprep import load_confounds_strategy
 from nilearn.datasets import fetch_atlas_harvard_oxford
 import nibabel as nib
-from brainiak import io
 
 
 def nifti_mask(scans, masks, confounds, fwhm, roi=False):
@@ -83,22 +82,22 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
     for sub in glob.glob(f'{data_dir}/sub-*/'):
         subs.append(sub[-7:-1])
         subs.sort()
-    
     for sub in subs:
         sessions = []
         for ses in glob.glob(f'{data_dir}/{sub}/ses-*/'):
             sessions.append(ses[-8:-1])
-            sessions.sort()       
+            sessions.sort()
         data_dict[sub] = sessions
 
     # Collect all file names
     nifti_fnames = []
     mask_fnames = []
-    for sub_dirs in data_dict:      
+    for sub_dirs in data_dict:
         for ses in data_dict[sub_dirs]:
             nifti_fnames.extend(glob.glob(f'{data_dir}/{sub_dirs}/{ses}/func/*'
-                                          'MNI152NLin2009cAsym_desc-preproc_bold.nii.*'))
-            
+                                          'MNI152NLin2009cAsym_desc-preproc_bold'
+                                          '.nii.gz'))
+
             mask_fnames.extend(glob.glob(f'{data_dir}/{sub_dirs}/{ses}/func/*'
                                          'MNI152NLin2009cAsym_desc-brain_mask'
                                          '.nii.gz'))
@@ -133,7 +132,6 @@ def process_episodewise(fnames, output_filepath, task_name,
     # {task_name: i for i, task_name in enumerate(episodes)}
     # loads confounds files
     confs = []
-    
     for nii in fnames:
         conf = load_confounds_strategy(nii, denoise_strategy='simple',
                                        motion='basic')
