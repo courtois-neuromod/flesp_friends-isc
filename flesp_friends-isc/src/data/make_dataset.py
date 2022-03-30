@@ -54,9 +54,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
     # individual anatomical mask subject-wise
     else:
         masked_imgs = []
-        for mask, bold, conf in zip(masks.sort(),
-                                    scans.sort(),
-                                    confounds.sort()):
+        for mask, bold, conf in zip(masks, scans, confounds):
             masker = NiftiMasker(mask_img=mask, t_r=1.49,
                                  standardize=False, detrend=True,
                                  high_pass=0.01, low_pass=0.1,
@@ -191,6 +189,8 @@ def main(input_filepath, output_filepath):
         # list data as dict values for each sub and each item is episode
         fnames = fnmatch.filter(nifti_names, f'*{task_name}*')
         masks = fnmatch.filter(mask_names, f'*{task_name}*')
+        fnames.sort()
+        masks.sort()
         process_episodewise(fnames, output_filepath, task_name,
                             masks, fwhm=6, roi=False)
         logger.info(f'Done processing : {task_name} \n'
