@@ -55,7 +55,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
     else:
         masked_imgs = []
         for mask, bold, conf in zip(masks, scans, confounds):
-            print(mask)
+            print(mask, bold, conf)
             masker = NiftiMasker(mask_img=mask, t_r=1.49,
                                  standardize=False, detrend=True,
                                  high_pass=0.01, low_pass=0.1,
@@ -161,9 +161,10 @@ def process_episodewise(fnames, output_filepath, task_name,
 
     del confs
     for i, img in enumerate(masked_images):
-        fn = os.path.join(f"sub-0{i+1}+{output_filepath}", postproc_fname)
+        sub = os.path.basename(fnames[i])[:6]
+        fn = os.path.join(f"{sub}+{output_filepath}", postproc_fname)
         nib.save(img, fn)
-        print(f"Saved sub-0{i+1}, {task_name} under: {fn}")
+        print(f"Saved {sub}}, {task_name} under: {fn}")
     return postproc_fname
 
 
