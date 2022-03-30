@@ -3,3 +3,7 @@
 	url = /lustre03/project/6003287/datasets/cneuromod
 	datalad-id = 29e74738-8e09-11ea-80eb-8555360247cd
 	datalad-url = /lustre03/project/6003287/datasets/cneuromod
+[submodule "data/friends.fmriprep"]
+	path = data/friends.fmriprep
+	url = /lustre03/project/rrg-pbellec/ria-beluga/alias/cneuromod.friends.fmriprep
+	datalad-id = cbfd6482-5670-4f39-ba1b-9623f1f460b8

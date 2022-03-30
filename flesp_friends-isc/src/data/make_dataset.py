@@ -169,7 +169,7 @@ def main(input_filepath, output_filepath):
                                 delimiter=',', header=None).iloc[:, 0])
     logger.info(f"Iterating through episodes : {episodes[:5]}...")
     # iterate through episodes
-    for task_name in episodes[:1]:
+    for task_name in episodes[:10]:
         logger.info(f'Processing : {task_name}')
         # list data as dict values for each sub and each item is episode
         fnames = fnmatch.filter(nifti_names, f'*{task_name}*')
