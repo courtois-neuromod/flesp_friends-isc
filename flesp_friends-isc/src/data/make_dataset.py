@@ -60,6 +60,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
                                  high_pass=0.01, low_pass=0.1,
                                  smoothing_fwhm=fwhm)
             cleaned = masker.fit_transform(bold, confounds=conf)
+            print(f"Fitted {os.path.basename(bold)}")
             masked_imgs.append(maskers.inverse_transform(cleaned))
 
     return masked_imgs
