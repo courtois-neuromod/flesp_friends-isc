@@ -55,6 +55,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
     else:
         masked_imgs = []
         for mask, bold, conf in zip(masks, scans, confounds):
+            print(mask)
             masker = NiftiMasker(mask_img=mask, t_r=1.49,
                                  standardize=False, detrend=True,
                                  high_pass=0.01, low_pass=0.1,
