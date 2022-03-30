@@ -9,9 +9,7 @@ import fnmatch
 import pprintpp
 import numpy as np
 import pandas as pd
-
-
-from nilearn.maskers import MultiNiftiMasker, NiftiMasker NiftiLabelsMasker
+from nilearn.maskers import MultiNiftiMasker, NiftiMasker, NiftiLabelsMasker
 from nilearn.interfaces.fmriprep import load_confounds_strategy
 from nilearn.datasets import fetch_atlas_harvard_oxford
 import nibabel as nib
