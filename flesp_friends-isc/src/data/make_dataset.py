@@ -144,19 +144,22 @@ def process_episodewise(fnames, output_filepath, task_name,
                                roi=roi)
 
     # print the shape
-    print(f"Data : {task_name} \t"
-          f'shape:{np.shape(masked_images)}')
+    for i, img in enumerate(masked_images):
+        sub = os.path.basename(fnames[i])[4:6]
+        print(f"Task : {task_name} \n"
+              f"Subject ID: {sub} \n"
+              f'shape:{np.shape(img)}')
 
     tmpl = f'space-MNI152NLin2009cAsym_desc-fwhm{fwhm}'
     if roi:
         tmpl = 'ROI_atlas_harvard_oxford' + tmpl
-    postproc_fname = str(f'{task_name}/{masked_images}'
-                         f'_{task_name}_{tmpl}.hdf5')
 
     del confs
     for i, img in enumerate(masked_images):
         sub = os.path.basename(fnames[i])[:6]
-        fn = os.path.join(f"{sub}+{output_filepath}", postproc_fname)
+        postproc_fname = str(f'{task_name}/{sub}'
+                             f'_{task_name}_{tmpl}.nii.gz')
+        fn = os.path.join(f"{output_filepath}", postproc_fname)
         nib.save(img, fn)
         print(f"Saved {sub}, {task_name} under: {fn}")
     return postproc_fname
