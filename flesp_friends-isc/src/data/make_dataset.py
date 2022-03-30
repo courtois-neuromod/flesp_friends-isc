@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 
-from nilearn.maskers import MultiNiftiMasker, NiftiLabelsMasker
+from nilearn.maskers import MultiNiftiMasker, NiftiMasker NiftiLabelsMasker
 from nilearn.interfaces.fmriprep import load_confounds_strategy
 from nilearn.datasets import fetch_atlas_harvard_oxford
 import nibabel as nib
@@ -35,7 +35,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
     confounds: np.ndarray
         Any confounds to correct for in the cleaned data set.
     """
-    # niftimask and clean data
+    # ROI workflow
     if roi is True:
         atlas = fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',
                                            symmetric_split=True)
@@ -43,13 +43,30 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
                                     standardize=False, detrend=True,
                                     high_pass=0.01, low_pass=0.1,
                                     smoothing_fwhm=fwhm)
-    else:
+
+        cleaned = maskers.fit_transform(scans, confounds=confounds)
+        masked_imgs = maskers.inverse_transform(cleaned)
+    # generic mask workflow
+    elif isinstance(masks, list) is False:
         maskers = MultiNiftiMasker(mask_img=masks, t_r=1.49,
                                    standardize=False, detrend=True,
                                    high_pass=0.01, low_pass=0.1,
                                    smoothing_fwhm=fwhm)
-    cleaned = maskers.fit_transform(scans, confounds=confounds)
-    return maskers.inverse_transform(cleaned)
+        masked_imgs = maskers.inverse_transform(cleaned)
+    # individual anatomical mask subject-wise
+    else:
+        masked_imgs = []
+        for mask, bold, conf in zip(masks.sort(),
+                                    scans.sort(),
+                                    confounds.sort()):
+            masker = NiftiMasker(mask_img=mask, t_r=1.49,
+                                 standardize=False, detrend=True,
+                                 high_pass=0.01, low_pass=0.1,
+                                 smoothing_fwhm=fwhm)
+            cleaned = masker.fit_transform(bold, confounds=conf)
+            masked_imgs.append(maskers.inverse_transform(cleaned))
+
+    return masked_imgs
 
 
 def create_data_dictionary(data_dir, sessions=None, verbose=False):
@@ -134,7 +151,7 @@ def process_episodewise(fnames, output_filepath, task_name,
                                roi=roi)
 
     # convert NaNs to zero0
-    masked_images[task_name][np.isnan(masked_images[task_name])] = 0
+    masked_images[np.isnan(masked_images)] = 0
     # print the shape
     print(f"Data : {task_name} \t"
           f'shape:{np.shape(masked_images[task_name])}')
