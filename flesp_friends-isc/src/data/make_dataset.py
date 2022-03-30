@@ -156,8 +156,10 @@ def process_episodewise(fnames, output_filepath, task_name,
 @click.argument('input_filepath', type=click.Path(exists=True))
 @click.argument('output_filepath', type=click.Path())
 def main(input_filepath, output_filepath):
-    """ Runs data processing scripts to turn raw data from (../raw) into
-        cleaned data ready to be analyzed (saved in ../processed).
+    """
+    Prepare dataset.
+
+    I/O function to process all episodes.
     """
     logger = logging.getLogger(__name__)
     logger.info('making final data set from raw data')
@@ -169,18 +171,13 @@ def main(input_filepath, output_filepath):
                                 delimiter=',', header=None).iloc[:, 0])
     logger.info(f"Iterating through episodes : {episodes[:5]}...")
     # iterate through episodes
-    for task_name in episodes[:10]:
+    for task_name in episodes[:3]:
         logger.info(f'Processing : {task_name}')
         # list data as dict values for each sub and each item is episode
         fnames = fnmatch.filter(nifti_names, f'*{task_name}*')
         masks = fnmatch.filter(mask_names, f'*{task_name}*')
-        try:
-            process_episodewise(fnames, output_filepath, task_name,
-                                masks, fwhm=6, roi=False)
-        except ValueError:
-            logger.info(f"Cannot find confounds file : {task_name} \n"
-                        '---------------------------------')
-            continue
+        process_episodewise(fnames, output_filepath, task_name,
+                            masks, fwhm=6, roi=False)
         logger.info(f'Done processing : {task_name} \n'
                     '---------------------------------')
 
