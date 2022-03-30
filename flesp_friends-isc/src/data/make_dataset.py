@@ -143,9 +143,6 @@ def process_episodewise(fnames, output_filepath, task_name,
                                fwhm=fwhm,
                                roi=roi)
 
-    # convert NaNs to zero0
-    for img in masked_images:
-        img[np.isnan(img)] = 0
     # print the shape
     print(f"Data : {task_name} \t"
           f'shape:{np.shape(masked_images)}')
