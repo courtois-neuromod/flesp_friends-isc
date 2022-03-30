@@ -55,14 +55,13 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
     else:
         masked_imgs = []
         for mask, bold, conf in zip(masks, scans, confounds):
-            print(mask, bold, conf)
             masker = NiftiMasker(mask_img=mask, t_r=1.49,
                                  standardize=False, detrend=True,
                                  high_pass=0.01, low_pass=0.1,
                                  smoothing_fwhm=fwhm)
-            cleaned = masker.fit_transform(bold, confounds=conf)
+            cleaned = masker.fit_transform(bold, confounds=conf[0])
             print(f"Fitted {os.path.basename(bold)}")
-            masked_imgs.append(maskers.inverse_transform(cleaned))
+            masked_imgs.append(masker.inverse_transform(cleaned))
 
     return masked_imgs
 
@@ -84,25 +83,23 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
     for sub in glob.glob(f'{data_dir}/sub-*/'):
         subs.append(sub[-7:-1])
         subs.sort()
-    if sessions is None:
+    
+    for sub in subs:
         sessions = []
-        for sub in subs:
-            for ses in glob.glob(f'{data_dir}/{sub}/ses-*/'):
-                sessions.append(ses[-8:-1])
-                sessions.sort()
-            data_dict[sub] = sessions
-    else:
-        for sub in subs:
-            data_dict[sub] = sessions
+        for ses in glob.glob(f'{data_dir}/{sub}/ses-*/'):
+            sessions.append(ses[-8:-1])
+            sessions.sort()       
+        data_dict[sub] = sessions
 
     # Collect all file names
     nifti_fnames = []
     mask_fnames = []
-    for sub_dirs in data_dict:
+    for sub_dirs in data_dict:      
         for ses in data_dict[sub_dirs]:
-            nifti_fnames.extend(glob.glob(f'{data_dir}/{sub}/{ses}/func/*'
-                                'MNI152NLin2009cAsym_desc-preproc_bold.nii.*'))
-            mask_fnames.extend(glob.glob(f'{data_dir}/{sub}/{ses}/func/*'
+            nifti_fnames.extend(glob.glob(f'{data_dir}/{sub_dirs}/{ses}/func/*'
+                                          'MNI152NLin2009cAsym_desc-preproc_bold.nii.*'))
+            
+            mask_fnames.extend(glob.glob(f'{data_dir}/{sub_dirs}/{ses}/func/*'
                                          'MNI152NLin2009cAsym_desc-brain_mask'
                                          '.nii.gz'))
     if verbose:
@@ -136,6 +133,7 @@ def process_episodewise(fnames, output_filepath, task_name,
     # {task_name: i for i, task_name in enumerate(episodes)}
     # loads confounds files
     confs = []
+    
     for nii in fnames:
         conf = load_confounds_strategy(nii, denoise_strategy='simple',
                                        motion='basic')
@@ -148,7 +146,8 @@ def process_episodewise(fnames, output_filepath, task_name,
                                roi=roi)
 
     # convert NaNs to zero0
-    masked_images[np.isnan(masked_images)] = 0
+    for img in masked_images:
+        img[np.isnan(img)] = 0
     # print the shape
     print(f"Data : {task_name} \t"
           f'shape:{np.shape(masked_images)}')
@@ -164,7 +163,7 @@ def process_episodewise(fnames, output_filepath, task_name,
         sub = os.path.basename(fnames[i])[:6]
         fn = os.path.join(f"{sub}+{output_filepath}", postproc_fname)
         nib.save(img, fn)
-        print(f"Saved {sub}}, {task_name} under: {fn}")
+        print(f"Saved {sub}, {task_name} under: {fn}")
     return postproc_fname
 
 
@@ -182,7 +181,7 @@ def main(input_filepath, output_filepath):
     project_dir = Path(__file__).resolve().parents[2]
     data_dir = os.path.join(project_dir, input_filepath)
     logger.info(f'Looking for data in :{data_dir}')
-    nifti_names, mask_names = create_data_dictionary(data_dir, verbose=False)
+    nifti_names, mask_names = create_data_dictionary(data_dir, verbose=True)
     episodes = list(pd.read_csv(f'{project_dir}/episodes.csv',
                                 delimiter=',', header=None).iloc[:, 0])
     logger.info(f"Iterating through episodes : {episodes[:5]}...")
