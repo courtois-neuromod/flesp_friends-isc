@@ -67,7 +67,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
 
 def create_data_dictionary(data_dir, sessions=None, verbose=False):
     """
-    Get all the participant file names
+    Get all the participant file names.
 
     Parameters
     ----------
@@ -138,9 +138,8 @@ def process_episodewise(fnames, output_filepath, task_name,
         conf = load_confounds_strategy(nii, denoise_strategy='simple',
                                        motion='basic')
         confs.append(conf)
-    images = io.load_images(fnames)
 
-    masked_images = nifti_mask(scans=images,
+    masked_images = nifti_mask(scans=fnames,
                                masks=masks,
                                confounds=confs,
                                fwhm=fwhm,
@@ -150,7 +149,7 @@ def process_episodewise(fnames, output_filepath, task_name,
     masked_images[np.isnan(masked_images)] = 0
     # print the shape
     print(f"Data : {task_name} \t"
-          f'shape:{np.shape(masked_images[task_name])}')
+          f'shape:{np.shape(masked_images)}')
 
     tmpl = f'space-MNI152NLin2009cAsym_desc-fwhm{fwhm}'
     if roi:
@@ -158,10 +157,11 @@ def process_episodewise(fnames, output_filepath, task_name,
     postproc_fname = str(f'{task_name}/{masked_images}'
                          f'_{task_name}_{tmpl}.hdf5')
 
-    del images
-    nib.save(masked_images[task_name], os.path.join(output_filepath,
-                                                    postproc_fname))
-    print(f"Saved {task_name} under: {postproc_fname}")
+    del confs
+    for i, img in enumerate(masked_images):
+        fn = os.path.join(f"sub-0{i+1}+{output_filepath}", postproc_fname)
+        nib.save(img, fn)
+        print(f"Saved sub-0{i+1}, {task_name} under: {fn}")
     return postproc_fname
 
 
