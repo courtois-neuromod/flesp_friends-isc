@@ -28,6 +28,9 @@ requirements: test_environment
 ## Make Dataset
 data:
 	$(PYTHON_INTERPRETER) src/data/make_dataset.py /lustre03/project/rrg-pbellec/flesp/flesp_friends-isc/data/friends.fmriprep /scratch/flesp/data/processed
+## Make features
+features:
+	$(PYTHON_INTERPRETER) src/features/build_features.py /scratch/flesp/data/processed /scratch/flesp/data/iscs/
 ## Delete all compiled Python files
 clean:
 	find . -type f -name "*.py[co]" -delete
