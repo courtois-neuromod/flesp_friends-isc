@@ -8,7 +8,7 @@ from brainiak.isc import isc
 from brainiak import io, image
 import nibabel as nib
 from nilearn.datasets import load_mni152_template
-from nilearn.image import load_image
+from nilearn.image import load_img
 
 subjects = ['sub-01', 'sub-02', 'sub-03',
             'sub-04', 'sub-05', 'sub-06']
@@ -16,7 +16,7 @@ subjects = ['sub-01', 'sub-02', 'sub-03',
 # make sure it's installed
 brain_mask = load_mni152_template()
 coords = np.where(brain_mask)
-brain_nii = load_image(brain_mask)
+brain_nii = load_img(brain_mask)
 print("Loaded mask")
 
 
@@ -46,6 +46,9 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         # compute ISC
         bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
                 masked_imgs, 6)
+
+           
+           
         # replace nans
         bold_imgs[np.isnan(bold_imgs)] = 0
         # compute ISC
@@ -82,7 +85,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format=log_fmt)
 
     # not used in this stub but often useful for finding various files
-    project_dir = Path(__file__).resolve().parents[2]
+    #project_dir = Path(__file__).resolve().parents[2]
 
     # find .env automagically by walking up directories until it's found, then
     # load up the .env entries as environment variables
