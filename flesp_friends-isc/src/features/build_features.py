@@ -8,6 +8,7 @@ from brainiak.isc import isc
 from brainiak import io, image
 import nibabel as nib
 from nilearn.datasets import load_mni152_template
+from nilearn.image import load_image
 
 subjects = ['sub-01', 'sub-02', 'sub-03',
             'sub-04', 'sub-05', 'sub-06']
@@ -15,7 +16,7 @@ subjects = ['sub-01', 'sub-02', 'sub-03',
 # make sure it's installed
 brain_mask = load_mni152_template()
 coords = np.where(brain_mask)
-brain_nii = nib.load(brain_mask)
+brain_nii = load_image(brain_mask)
 
 
 @click.command()
