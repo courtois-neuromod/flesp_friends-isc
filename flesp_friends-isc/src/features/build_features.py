@@ -17,6 +17,7 @@ subjects = ['sub-01', 'sub-02', 'sub-03',
 brain_mask = load_mni152_template()
 coords = np.where(brain_mask)
 brain_nii = load_image(brain_mask)
+print("Loaded mask")
 
 
 @click.command()
@@ -38,7 +39,9 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
 
         images = io.load_images(files)
+        logger.info("Loaded files")
         masked_imgs = image.mask_images(images, brain_mask)
+        logger.info("Masked images")
 
         # compute ISC
         bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
@@ -46,6 +49,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         # replace nans
         bold_imgs[np.isnan(bold_imgs)] = 0
         # compute ISC
+        logger.info("Computing ISC")
         isc_imgs = isc(bold_imgs, pairwise=pairwise)
 
         # save ISC maps per subject
@@ -60,6 +64,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
             )
 
             # Save the ISC data as a volume
+            logger.info("Saving images")
             try:
                 nib.save(isc_nifti, f'{isc_map_path}/{task}/temporalISC_{task}'
                                     f'_{subj}.nii.gz')
@@ -67,10 +72,9 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
                 os.path.mkdir(f"{isc_map_path}/{task}")
                 nib.save(isc_nifti, f'{isc_map_path}/{task}/temporalISC_{task}'
                                     f'_{subj}.nii.gz')
-
         # free up memory
         del bold_imgs, isc_imgs
-
+        logger.info(f"Done workflow for {task}")
 
 if __name__ == '__main__':
     # NOTE: from command line `make_dataset input_data output_filepath`
