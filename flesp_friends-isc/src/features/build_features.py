@@ -32,7 +32,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
     logger.info('Starting Temporal ISC workflow')
     # walks subdirs with taks name (task-s01-e01a)
     for task in glob.glob(f"{postproc_path}/*/"):
-        task = os.path.basename(task)
+        task = task[-12:]
         logger.info(f'Importing data')
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
 
