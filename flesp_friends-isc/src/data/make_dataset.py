@@ -185,7 +185,7 @@ def main(input_filepath, output_filepath):
     logger.info(f'Looking for data in :{data_dir}')
     nifti_names, mask_names = create_data_dictionary(data_dir, verbose=True)
     episodes = list(pd.read_csv(f'{project_dir}/episodes.csv',
-                                delimiter=',', header=None).iloc[:, 0])
+                                delimiter=',', header=None).iloc[50:, 0])
     logger.info(f"Iterating through episodes : {episodes[:5]}...")
     # iterate through episodes
     for task_name in episodes:

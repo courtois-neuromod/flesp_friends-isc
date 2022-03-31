@@ -5,7 +5,7 @@ from dotenv import find_dotenv, load_dotenv
 import glob
 import numpy as np
 from brainiak.isc import isc
-from brainiak import io, image
+from brainiak import image
 import nibabel as nib
 from nilearn.datasets import load_mni152_template
 from nilearn.image import load_img
@@ -38,17 +38,15 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         logger.info(f'Importing data')
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
 
-        images = io.load_images(files)
+        images = load_img(files)
         logger.info("Loaded files")
         masked_imgs = image.mask_images(images, brain_mask)
         logger.info("Masked images")
 
         # compute ISC
         bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
-                masked_imgs, 6)
+                masked_imgs, len(files))
 
-           
-           
         # replace nans
         bold_imgs[np.isnan(bold_imgs)] = 0
         # compute ISC
