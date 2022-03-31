@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --account=rrg-pbellec
 #SBATCH --job-name=postproc
-#SBATCH --output=./output_file.out
-#SBATCH --error=./error_file.err
+#SBATCH --output=./output_file_12.out
+#SBATCH --error=./error_file_12.err
 #SBATCH --time=12:00:00
 #SBATCH --cpus-per-task=16
 #SBATCH --mem-per-cpu=24G
