@@ -70,7 +70,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
                 nib.save(isc_nifti, f'{isc_map_path}/{task}/temporalISC_{task}'
                                     f'_{subj}.nii.gz')
             except FileNotFoundError:
-                os.path.mkdir(f"{isc_map_path}/{task}")
+                os.mkdir(f"{isc_map_path}/{task}")
                 nib.save(isc_nifti, f'{isc_map_path}/{task}/temporalISC_{task}'
                                     f'_{subj}.nii.gz')
         # free up memory
