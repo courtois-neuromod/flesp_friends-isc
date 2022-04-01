@@ -44,7 +44,7 @@ def surface_isc_plots(data_dir, subject, tasks=tasks,
     logger = logging.getLogger(__name__)
     for view, task in itertools.product(views, tasks):
         logger.info(f"{view} | {task}")
-        isc_files = sorted(glob.glob(f'{data_dir}/{task}/*.nii.gz'))
+        isc_files = sorted(glob.glob(f'{data_dir}/{task}/{subject}*.nii.gz'))
         average_isc = image.mean_img(isc_files)
         logger.info("Averaged BOLD images")
         # plot left hemisphere
@@ -69,7 +69,8 @@ def surface_isc_plots(data_dir, subject, tasks=tasks,
         plotting.plot_surf_stat_map(
             fsaverage.pial_right, texture, hemi=hemi,
             colorbar=True, threshold=threshold, vmax=vmax,
-            bg_map=fsaverage.sulc_right, view=view)
+            bg_map=fsaverage.sulc_right, view=view,
+            title=f"{subject} {task}")
         plt.savefig(f'/scratch/flesp/figures/{task}/'
                     f'right_{view}_surfplot_ISC_on_{task}_{subject}.png',
                     bbox_inches='tight')
@@ -142,10 +143,10 @@ def plot_axial_slice(tasks, data_dir, kind='temporal'):
         # NOTE: threshold may need to be adjusted for each decoding task
         plotting.plot_stat_map(
             average,
-            threshold=0.1, vmax=0.75, symmetric_cbar=False,
+            threshold=0.2, vmax=0.75, symmetric_cbar=False,
             display_mode='z', cut_coords=[-24, -6, 7, 25, 37, 51, 65]
         )
-        plt.savefig(f'/scratch/flesp/figures/{task}/{kind}ISC_on_{task}.png',
+        plt.savefig(f'{data_dir}{kind}ISC_on_{task}.png',
                     bbox_inches='tight')
 
 
@@ -153,6 +154,6 @@ if __name__ == '__main__':
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
-    surface_isc_plots()
+    # surface_isc_plots()
     plot_corr_mtx()
-    plot_axial_slice(tasks)
+    # plot_axial_slice(tasks)
