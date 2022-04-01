@@ -24,8 +24,9 @@ for task in sorted(episodes):
 @click.command()
 @click.argument('data_dir', type=click.Path(exists=True))
 @click.argument('subject', type=str)
-def surface_isc_plots(data_dir, subject, tasks, views=['lateral', 'medial'],
-                      hemi='left', threshold=0.2, vmax=None):
+def surface_isc_plots(data_dir, subject, tasks=tasks,
+                      views=['lateral', 'medial'], hemi='left',
+                      threshold=0.2, vmax=None):
     """
     Plot surface subject-wise.
 
@@ -40,10 +41,12 @@ def surface_isc_plots(data_dir, subject, tasks, views=['lateral', 'medial'],
         ['lateral', 'medial', 'dorsal', 'ventral', 'anterior', 'posterior'].
         Defaults to ['lateral', 'medial'].
     """
+    logger = logging.getLogger(__name__)
     for view, task in itertools.product(views, tasks):
+        logger.info(f"{view} | {task}")
         isc_files = sorted(glob.glob(f'{data_dir}/{task}/*.nii.gz'))
         average_isc = image.mean_img(isc_files)
-
+        logger.info("Averaged BOLD images")
         # plot left hemisphere
         texture = surface.vol_to_surf(average_isc, fsaverage.pial_left)
         plotting.plot_surf_stat_map(
@@ -56,6 +59,7 @@ def surface_isc_plots(data_dir, subject, tasks, views=['lateral', 'medial'],
                         f'left_{view}_surfplot_ISC_on_{task}_{subject}.png',
                         bbox_inches='tight')
         except FileNotFoundError:
+            logger.info(f"Creating path for {task}")
             os.mkdir(f'/scratch/flesp/figures/{task}/')
             plt.savefig(f'/scratch/flesp/figures/{task}/'
                         f'left_{view}_surfplot_ISC_on_{task}_{subject}.png',
@@ -71,6 +75,7 @@ def surface_isc_plots(data_dir, subject, tasks, views=['lateral', 'medial'],
                     bbox_inches='tight')
 
 
+@click.argument('data_dir', type=click.Path(exists=True))
 def plot_corr_mtx(data_dir, mask_img, kind='temporal'):
     """
     Plot Correlation matrix.
@@ -109,6 +114,7 @@ def plot_corr_mtx(data_dir, mask_img, kind='temporal'):
                 bbox_inches='tight')
 
 
+@click.argument('data_dir', type=click.Path(exists=True))
 def plot_axial_slice(tasks, data_dir, kind='temporal'):
     """
     Plot axial slice.
@@ -146,4 +152,4 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format=log_fmt)
     surface_isc_plots()
     plot_corr_mtx()
-    plot_axial_slice()
+    plot_axial_slice(tasks)

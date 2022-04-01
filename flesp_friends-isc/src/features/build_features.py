@@ -32,7 +32,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
     logger.info('Starting Temporal ISC workflow')
     tasks = glob.glob(f"{postproc_path}/*/")
     # walks subdirs with taks name (task-s01-e01a)
-    for task in sorted(tasks):
+    for task in sorted(tasks)[22:]:
         task = task[-13:-1]
         logger.info(f'Importing data')
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
@@ -47,8 +47,11 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         logger.info("Masked images")
 
         # compute ISC
-        bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
+        try:
+            bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
                 masked_imgs, len(files))
+        except ValueError:
+            logger.info(f"Can't perform MaskedMultiSubjectData on {task}")
         logger.info(f"Correctly imported masked images for {len(files)} subjs"
                     "\n------------------------------------------------------")
         # replace nans
