@@ -7,15 +7,14 @@ import numpy as np
 from brainiak.isc import isc
 from brainiak import image, io
 import nibabel as nib
-from nilearn.datasets import load_mni152_template
 
 subjects = ['sub-01', 'sub-02', 'sub-03',
             'sub-04', 'sub-05', 'sub-06']
 
-# make sure it's installed
-brain_mask = load_mni152_template()
+mask_name = 'tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz'
+brain_mask = io.load_boolean_mask(mask_name)
 coords = np.where(brain_mask)
-brain_nii = io.load_images(brain_mask)
+brain_nii = nib.load(mask_name)
 print("Loaded mask")
 
 
