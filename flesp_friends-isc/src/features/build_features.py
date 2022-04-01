@@ -56,7 +56,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         # compute ISC
         logger.info("\n"
                     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                    "~             Computing ISC                         ~\n"
+                    f"|      Computing ISC {task}                    |\n"
                     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         isc_imgs = isc(bold_imgs, pairwise=pairwise)
         logger.info("Saving images")
@@ -83,8 +83,8 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         # free up memory
         del bold_imgs, isc_imgs
         logger.info("\n"
-                    "------------------------------------------------------"
-                    f"              Done workflow for {task}               "
+                    "------------------------------------------------------\n"
+                    f"                Done workflow for {task}             "
                     "\n------------------------------------------------------")
 
 
