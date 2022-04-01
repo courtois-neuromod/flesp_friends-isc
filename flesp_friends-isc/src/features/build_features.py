@@ -39,7 +39,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         logger.info("File order")
         for fn in files:
             _, fn = os.path.split(fn)
-            logger.info(fn[:7])
+            logger.info(fn[:6])
         # Fetch images and mask them
         images = io.load_images(files)
         logger.info("Loaded files")
@@ -54,9 +54,10 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         # replace nans
         bold_imgs[np.isnan(bold_imgs)] = 0
         # compute ISC
-        logger.info("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                    "               Computing ISC \n"
-                    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        logger.info("\n"
+                    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                    "~             Computing ISC                         ~\n"
+                    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         isc_imgs = isc(bold_imgs, pairwise=pairwise)
         logger.info("Saving images")
         # save ISC maps per subject
@@ -81,8 +82,10 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
                                     f'temporalISC.nii.gz')
         # free up memory
         del bold_imgs, isc_imgs
-        logger.info(f"Done workflow for {task} \n"
-                    "--------------------------------------------------------")
+        logger.info("\n"
+                    "------------------------------------------------------"
+                    f"              Done workflow for {task}               "
+                    "\n------------------------------------------------------")
 
 
 if __name__ == '__main__':
