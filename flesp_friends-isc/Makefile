@@ -31,6 +31,9 @@ data:
 ## Make features
 features:
 	$(PYTHON_INTERPRETER) src/features/build_features.py /scratch/flesp/data/processed /scratch/flesp/data/iscs
+## Make figures
+figures:
+	$(PYTHON_INTERPRETER) src/visualization/visualize.py /scratch/flesp/data/iscs sub-01
 ## Delete all compiled Python files
 clean:
 	find . -type f -name "*.py[co]" -delete

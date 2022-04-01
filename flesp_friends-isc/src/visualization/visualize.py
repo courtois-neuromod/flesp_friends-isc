@@ -41,7 +41,7 @@ def surface_isc_plots(data_dir, subject, tasks, views=['lateral', 'medial'],
         Defaults to ['lateral', 'medial'].
     """
     for view, task in itertools.product(views, tasks):
-        isc_files = sorted(glob.glob(f'{data_dir}{task}/*.nii.gz'))
+        isc_files = sorted(glob.glob(f'{data_dir}/{task}/*.nii.gz'))
         average_isc = image.mean_img(isc_files)
 
         # plot left hemisphere
@@ -91,7 +91,7 @@ def plot_corr_mtx(data_dir, mask_img, kind='temporal'):
         err_msg = 'Unrecognized ISC type! Must be spatial or temporal'
         raise ValueError(err_msg)
 
-    isc_files = sorted(glob.glob(f'{data_dir}*/*.nii.gz'))
+    isc_files = sorted(glob.glob(f'{data_dir}/*/*.nii.gz'))
     masker = input_data.NiftiMasker(mask_img=mask_img)
 
     isc = [masker.fit_transform(i).mean(axis=0) for i in isc_files]
@@ -127,7 +127,7 @@ def plot_axial_slice(tasks, data_dir, kind='temporal'):
         raise ValueError(err_msg)
 
     for task in tasks:
-        files = glob.glob(f'data_dir*/*{task}*.nii.gz')
+        files = glob.glob(f'data_dir/{task}/*.nii.gz')
         average = image.mean_img(files)
 
         # NOTE: threshold may need to be adjusted for each decoding task
@@ -136,7 +136,7 @@ def plot_axial_slice(tasks, data_dir, kind='temporal'):
             threshold=0.2, vmax=0.75, symmetric_cbar=False,
             display_mode='z', cut_coords=[-24, -6, 7, 25, 37, 51, 65]
         )
-        plt.savefig(f'{kind}ISC_on_{task}.png',
+        plt.savefig(f'{data_dir}{kind}ISC_on_{task}.png',
                     bbox_inches='tight')
 
 
