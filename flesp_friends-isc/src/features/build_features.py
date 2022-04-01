@@ -7,6 +7,7 @@ import numpy as np
 from brainiak.isc import isc
 from brainiak import image, io
 import nibabel as nib
+import psutil
 
 subjects = ['sub-01', 'sub-02', 'sub-03',
             'sub-04', 'sub-05', 'sub-06']
@@ -36,7 +37,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         task = task[-13:-1]
         logger.info(f'Importing data')
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
-
+        # Fetch images and mask them
         images = io.load_images(files)
         logger.info("Loaded files")
         masked_imgs = image.mask_images(images, brain_mask)
@@ -46,7 +47,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
                 masked_imgs, len(files))
         logger.info(f"Correctly imported masked images for {len(files)} subjs")
-
+        logger.info(f"Proportion of CPU usage : {psutil.virtual_memory()[2]}")
         # replace nans
         bold_imgs[np.isnan(bold_imgs)] = 0
         # compute ISC
@@ -79,7 +80,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
                     "--------------------------------------------------------")
 
 
-if __name__ == 'src.features.build_features':
+if __name__ == '__main__':
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
