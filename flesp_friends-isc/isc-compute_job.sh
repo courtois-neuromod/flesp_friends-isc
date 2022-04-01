@@ -4,8 +4,8 @@
 #SBATCH --output=./isc_maps_10.out
 #SBATCH --error=./isc_maps_10.err
 #SBATCH --time=10:00:00
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=28G
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=24G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=s5c7o8a6s1u8i7u8@courtois-neuromod.slack.com
 

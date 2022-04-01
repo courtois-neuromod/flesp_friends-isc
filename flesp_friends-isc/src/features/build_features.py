@@ -36,8 +36,10 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         task = task[-13:-1]
         logger.info(f'Importing data')
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
-        logger.info("File order \n"
-                    f"{files}")
+        logger.info("File order")
+        for fn in files:
+            _, fn = os.path.split(fn)
+            logger.info(fn[:7])
         # Fetch images and mask them
         images = io.load_images(files)
         logger.info("Loaded files")
@@ -52,12 +54,11 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         # replace nans
         bold_imgs[np.isnan(bold_imgs)] = 0
         # compute ISC
-        logger.info("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        logger.info("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                     "               Computing ISC \n"
                     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         isc_imgs = isc(bold_imgs, pairwise=pairwise)
-        logger.info(f"CPU usage (%): {psutil.virtual_memory()[2]}")
-
+        logger.info("Saving images")
         # save ISC maps per subject
         for n, subj in enumerate(subjects):
             # Make the ISC output a volume
@@ -70,7 +71,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
             )
 
             # Save the ISC data as a volume
-            logger.info("Saving images")
+
             try:
                 nib.save(isc_nifti, f'{isc_map_path}/{task}/{subj}_{task}_'
                                     f'temporalISC.nii.gz')
