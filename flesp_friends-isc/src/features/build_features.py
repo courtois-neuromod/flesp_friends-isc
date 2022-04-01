@@ -36,9 +36,8 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         task = task[-13:-1]
         logger.info(f'Importing data')
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
-        logger.info("File order")
-        for fn in files:
-            logger.info(f"**{os.path.basename(fn[:7])}**")
+        logger.info("File order \n"
+                    f"{files}")
         # Fetch images and mask them
         images = io.load_images(files)
         logger.info("Loaded files")
@@ -50,13 +49,12 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
                 masked_imgs, len(files))
         logger.info(f"Correctly imported masked images for {len(files)} subjs"
                     "\n------------------------------------------------------")
-        logger.info(f"CPU usage (%): {psutil.virtual_memory()[2]}"
-                    "\n------------------------------------------------------")
         # replace nans
         bold_imgs[np.isnan(bold_imgs)] = 0
         # compute ISC
-        logger.info("Computing ISC \n"
-                    ">>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        logger.info("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+                    "               Computing ISC \n"
+                    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         isc_imgs = isc(bold_imgs, pairwise=pairwise)
         logger.info(f"CPU usage (%): {psutil.virtual_memory()[2]}")
 
@@ -82,8 +80,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
                                     f'temporalISC.nii.gz')
         # free up memory
         del bold_imgs, isc_imgs
-        logger.info("-------------------------------------------------------\n"
-                    f"Done workflow for {task} \n"
+        logger.info(f"Done workflow for {task} \n"
                     "--------------------------------------------------------")
 
 
