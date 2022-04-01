@@ -1,3 +1,4 @@
+"""ISC workflow."""
 import os
 import click
 import logging
@@ -7,7 +8,6 @@ import numpy as np
 from brainiak.isc import isc
 from brainiak import image, io
 import nibabel as nib
-import psutil
 
 subjects = ['sub-01', 'sub-02', 'sub-03',
             'sub-04', 'sub-05', 'sub-06']
