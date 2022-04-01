@@ -23,8 +23,7 @@ for task in sorted(episodes):
 
 @click.command()
 @click.argument('data_dir', type=click.Path(exists=True))
-@click.argument('subject', type=str)
-def surface_isc_plots(data_dir, subject, tasks=tasks,
+def surface_isc_plots(data_dir, subjects=subjects, tasks=tasks,
                       views=['lateral', 'medial'], hemi='left',
                       threshold=0.2, vmax=None):
     """
@@ -42,39 +41,41 @@ def surface_isc_plots(data_dir, subject, tasks=tasks,
         Defaults to ['lateral', 'medial'].
     """
     logger = logging.getLogger(__name__)
-    for view, task in itertools.product(views, tasks):
-        logger.info(f"{view} | {task}")
-        isc_files = sorted(glob.glob(f'{data_dir}/{task}/{subject}*.nii.gz'))
-        average_isc = image.mean_img(isc_files)
-        logger.info("Averaged BOLD images")
-        # plot left hemisphere
-        texture = surface.vol_to_surf(average_isc, fsaverage.pial_left)
-        plotting.plot_surf_stat_map(
-            fsaverage.pial_left, texture, hemi=hemi,
-            colorbar=True, threshold=threshold, vmax=vmax,
-            bg_map=fsaverage.sulc_left, view=view,
-            title=f"{subject} {task}")
-        try:
+    for subject in subjects:
+        for view, task in itertools.product(views, tasks):
+            logger.info(f"{view} | {task}")
+            isc_files = sorted(glob.glob(
+                                f'{data_dir}/{task}/{subject}*.nii.gz'))
+            average_isc = image.mean_img(isc_files)
+            logger.info("Averaged BOLD images")
+            # plot left hemisphere
+            texture = surface.vol_to_surf(average_isc, fsaverage.pial_left)
+            plotting.plot_surf_stat_map(
+                fsaverage.pial_left, texture, hemi=hemi,
+                colorbar=True, threshold=threshold, vmax=vmax,
+                bg_map=fsaverage.sulc_left, view=view,
+                title=f"{subject} {task}")
+            fn = str(f'/scratch/flesp/figures/{task}/'
+                     f'left_{view}_surfplot_ISC_on_{task}_{subject}.png')
+            if os.path.exists(fn):
+                os.remove(fn)
+            try:
+                plt.savefig(fn, bbox_inches='tight')
+            except FileNotFoundError:
+                logger.info(f"Creating path for {task}")
+                os.mkdir(f'/scratch/flesp/figures/{task}/')
+                plt.savefig(fn, bbox_inches='tight')
+            # plot right hemisphere
+            texture = surface.vol_to_surf(average_isc, fsaverage.pial_right)
+            plotting.plot_surf_stat_map(
+                fsaverage.pial_right, texture, hemi=hemi,
+                colorbar=True, threshold=threshold, vmax=vmax,
+                bg_map=fsaverage.sulc_right, view=view,
+                title=f"{subject} {task}")
             plt.savefig(f'/scratch/flesp/figures/{task}/'
-                        f'left_{view}_surfplot_ISC_on_{task}_{subject}.png',
+                        f'right_{view}_surfplot_ISC_on_{task}_{subject}.png',
                         bbox_inches='tight')
-        except FileNotFoundError:
-            logger.info(f"Creating path for {task}")
-            os.mkdir(f'/scratch/flesp/figures/{task}/')
-            plt.savefig(f'/scratch/flesp/figures/{task}/'
-                        f'left_{view}_surfplot_ISC_on_{task}_{subject}.png',
-                        bbox_inches='tight')
-        # plot right hemisphere
-        texture = surface.vol_to_surf(average_isc, fsaverage.pial_right)
-        plotting.plot_surf_stat_map(
-            fsaverage.pial_right, texture, hemi=hemi,
-            colorbar=True, threshold=threshold, vmax=vmax,
-            bg_map=fsaverage.sulc_right, view=view,
-            title=f"{subject} {task}")
-        plt.savefig(f'/scratch/flesp/figures/{task}/'
-                    f'right_{view}_surfplot_ISC_on_{task}_{subject}.png',
-                    bbox_inches='tight')
-        plt.close
+            plt.close('all')
 
 
 @click.command()
@@ -94,6 +95,7 @@ def plot_corr_mtx(data_dir, mask_img, kind='temporal'):
     mask_img : str
         Path to the mask image on disk.
     """
+    logger = logging.getLogger(__name__)
     from netneurotools.plotting import plot_mod_heatmap
     if kind not in ['spatial', 'temporal']:
         err_msg = 'Unrecognized ISC type! Must be spatial or temporal'
@@ -113,13 +115,14 @@ def plot_corr_mtx(data_dir, mask_img, kind='temporal'):
 
     plot_mod_heatmap(corr, communities=np.asarray(comm),
                      inds=range(len(corr)), edgecolor='white')
-    plt.savefig(f'{kind}ISC_correlation_matrix_with_anat.png',
+    plt.savefig(f'/scratch/flesp/figures/'
+                '{kind}ISC_correlation_matrix_with_anat.png',
                 bbox_inches='tight')
 
 
 @click.command()
 @click.argument('data_dir', type=click.Path(exists=True))
-def plot_axial_slice(tasks, data_dir, kind='temporal'):
+def plot_axial_slice(data_dir, tasks=tasks, taskwise=False, kind='temporal'):
     """
     Plot axial slice.
 
@@ -132,21 +135,38 @@ def plot_axial_slice(tasks, data_dir, kind='temporal'):
         The path to the postprocessed data directory on disk.
         Should contain all generated ISC maps.
     """
+    logger = logging.getLogger(__name__)
     if kind not in ['spatial', 'temporal']:
         err_msg = 'Unrecognized ISC type! Must be spatial or temporal'
         raise ValueError(err_msg)
+    if taskwise:
+        logger.info()
+        for task in tasks:
+            files = glob.glob(f'data_dir/{task}/{kind}*.nii.gz')
+            average = image.mean_img(files)
 
-    for task in tasks:
-        files = glob.glob(f'data_dir/{task}/*.nii.gz')
+            # NOTE: threshold may need to be adjusted for each decoding task
+            plotting.plot_stat_map(
+                average,
+                threshold=0.2, vmax=0.75, symmetric_cbar=False,
+                display_mode='z', cut_coords=[-24, -6, 7, 25, 37, 51, 65],
+                title=f"{kind} ISC on {task}",
+            )
+            plt.savefig(f'/scratch/flesp/figures/{task}/{kind}ISC_on_{task}.png',
+                        bbox_inches='tight')
+    else:
+        logger.info()
+        files = glob.glob(f'data_dir/*/{kind}*.nii.gz')
         average = image.mean_img(files)
 
         # NOTE: threshold may need to be adjusted for each decoding task
         plotting.plot_stat_map(
             average,
             threshold=0.2, vmax=0.75, symmetric_cbar=False,
-            display_mode='z', cut_coords=[-24, -6, 7, 25, 37, 51, 65]
+            display_mode='z', cut_coords=[-24, -6, 7, 25, 37, 51, 65],
+            title=f"{kind} ISC on {task}",
         )
-        plt.savefig(f'{data_dir}{kind}ISC_on_{task}.png',
+        plt.savefig(f'/scratch/flesp/figures/{task}/{kind}ISC_on_{task}.png',
                     bbox_inches='tight')
 
 
@@ -154,6 +174,6 @@ if __name__ == '__main__':
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
-    # surface_isc_plots()
+    surface_isc_plots()
     plot_corr_mtx()
-    # plot_axial_slice(tasks)
+    plot_axial_slice()
