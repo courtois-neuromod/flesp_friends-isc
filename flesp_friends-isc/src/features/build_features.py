@@ -52,6 +52,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
                 masked_imgs, len(files))
         except ValueError:
             logger.info(f"Can't perform MaskedMultiSubjectData on {task}")
+            continue
         logger.info(f"Correctly imported masked images for {len(files)} subjs"
                     "\n------------------------------------------------------")
         # replace nans
