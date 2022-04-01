@@ -201,7 +201,7 @@ def main(input_filepath, output_filepath):
                     '---------------------------------')
 
 
-if __name__ == '__main__':
+if __name__ == 'src.data.make_dataset':
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)

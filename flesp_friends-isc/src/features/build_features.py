@@ -67,17 +67,19 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
             # Save the ISC data as a volume
             logger.info("Saving images")
             try:
-                nib.save(isc_nifti, f'{isc_map_path}/{task}/temporalISC_{task}'
-                                    f'_{subj}.nii.gz')
+                nib.save(isc_nifti, f'{isc_map_path}/{task}/{subj}_{task}_'
+                                    f'temporalISC.nii.gz')
             except FileNotFoundError:
                 os.mkdir(f"{isc_map_path}/{task}")
-                nib.save(isc_nifti, f'{isc_map_path}/{task}/temporalISC_{task}'
-                                    f'_{subj}.nii.gz')
+                nib.save(isc_nifti, f'{isc_map_path}/{task}/{subj}_{task}_'
+                                    f'temporalISC.nii.gz')
         # free up memory
         del bold_imgs, isc_imgs
-        logger.info(f"Done workflow for {task}")
+        logger.info(f"Done workflow for {task} \n"
+                    "--------------------------------------------------------")
 
-if __name__ == '__main__':
+
+if __name__ == 'src.features.build_features':
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
