@@ -73,8 +73,10 @@ def surface_isc_plots(data_dir, subject, tasks=tasks,
         plt.savefig(f'/scratch/flesp/figures/{task}/'
                     f'right_{view}_surfplot_ISC_on_{task}_{subject}.png',
                     bbox_inches='tight')
+        plt.close
 
 
+@click.command()
 @click.argument('data_dir', type=click.Path(exists=True))
 def plot_corr_mtx(data_dir, mask_img, kind='temporal'):
     """
@@ -114,6 +116,7 @@ def plot_corr_mtx(data_dir, mask_img, kind='temporal'):
                 bbox_inches='tight')
 
 
+@click.command()
 @click.argument('data_dir', type=click.Path(exists=True))
 def plot_axial_slice(tasks, data_dir, kind='temporal'):
     """
@@ -139,10 +142,10 @@ def plot_axial_slice(tasks, data_dir, kind='temporal'):
         # NOTE: threshold may need to be adjusted for each decoding task
         plotting.plot_stat_map(
             average,
-            threshold=0.2, vmax=0.75, symmetric_cbar=False,
+            threshold=0.1, vmax=0.75, symmetric_cbar=False,
             display_mode='z', cut_coords=[-24, -6, 7, 25, 37, 51, 65]
         )
-        plt.savefig(f'{data_dir}{kind}ISC_on_{task}.png',
+        plt.savefig(f'/scratch/flesp/figures/{task}/{kind}ISC_on_{task}.png',
                     bbox_inches='tight')
 
 
