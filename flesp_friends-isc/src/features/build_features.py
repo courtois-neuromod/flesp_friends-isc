@@ -5,10 +5,9 @@ from dotenv import find_dotenv, load_dotenv
 import glob
 import numpy as np
 from brainiak.isc import isc
-from brainiak import image
+from brainiak import image, io
 import nibabel as nib
 from nilearn.datasets import load_mni152_template
-from nilearn.image import load_img
 
 subjects = ['sub-01', 'sub-02', 'sub-03',
             'sub-04', 'sub-05', 'sub-06']
@@ -16,7 +15,7 @@ subjects = ['sub-01', 'sub-02', 'sub-03',
 # make sure it's installed
 brain_mask = load_mni152_template()
 coords = np.where(brain_mask)
-brain_nii = load_img(brain_mask)
+brain_nii = io.load_images(brain_mask)
 print("Loaded mask")
 
 
@@ -29,16 +28,17 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
 
     note
     """
-    # specify data path (leads to subdirs)
+    # specify data path (leads to subdi
     logger = logging.getLogger(__name__)
     logger.info('Starting Temporal ISC workflow')
+    tasks = glob.glob(f"{postproc_path}/*/")
     # walks subdirs with taks name (task-s01-e01a)
-    for task in glob.glob(f"{postproc_path}/*/"):
-        task = task[-12:]
+    for task in sorted(tasks):
+        task = task[-13:-1]
         logger.info(f'Importing data')
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
 
-        images = load_img(files)
+        images = io.load_images(files)
         logger.info("Loaded files")
         masked_imgs = image.mask_images(images, brain_mask)
         logger.info("Masked images")
@@ -46,6 +46,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         # compute ISC
         bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
                 masked_imgs, len(files))
+        logger.info(f"Correctly imported masked images for {len(files)} subjs")
 
         # replace nans
         bold_imgs[np.isnan(bold_imgs)] = 0
