@@ -16,7 +16,6 @@ mask_name = 'tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz'
 brain_mask = io.load_boolean_mask(mask_name)
 coords = np.where(brain_mask)
 brain_nii = nib.load(mask_name)
-print("Loaded mask")
 
 
 @click.command()
@@ -37,6 +36,9 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         task = task[-13:-1]
         logger.info(f'Importing data')
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
+        logger.info("File order")
+        for fn in files:
+            logger.info(f"**{os.path.basename(fn[:7])}**")
         # Fetch images and mask them
         images = io.load_images(files)
         logger.info("Loaded files")
@@ -46,13 +48,17 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         # compute ISC
         bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
                 masked_imgs, len(files))
-        logger.info(f"Correctly imported masked images for {len(files)} subjs")
-        logger.info(f"Proportion of CPU usage : {psutil.virtual_memory()[2]}")
+        logger.info(f"Correctly imported masked images for {len(files)} subjs"
+                    "--------------------------------------------------------")
+        logger.info(f"CPU usage (%): {psutil.virtual_memory()[2]}"
+                    "--------------------------------------------------------")
         # replace nans
         bold_imgs[np.isnan(bold_imgs)] = 0
         # compute ISC
-        logger.info("Computing ISC")
+        logger.info("Computing ISC"
+                    ">>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         isc_imgs = isc(bold_imgs, pairwise=pairwise)
+        logger.info(f"CPU usage (%): {psutil.virtual_memory()[2]}")
 
         # save ISC maps per subject
         for n, subj in enumerate(subjects):
@@ -76,7 +82,8 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
                                     f'temporalISC.nii.gz')
         # free up memory
         del bold_imgs, isc_imgs
-        logger.info(f"Done workflow for {task} \n"
+        logger.info("--------------------------------------------------------"
+                    f"Done workflow for {task} \n"
                     "--------------------------------------------------------")
 
 
