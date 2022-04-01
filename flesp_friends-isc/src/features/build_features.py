@@ -49,13 +49,13 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
                 masked_imgs, len(files))
         logger.info(f"Correctly imported masked images for {len(files)} subjs"
-                    "--------------------------------------------------------")
+                    "\n------------------------------------------------------")
         logger.info(f"CPU usage (%): {psutil.virtual_memory()[2]}"
-                    "--------------------------------------------------------")
+                    "\n------------------------------------------------------")
         # replace nans
         bold_imgs[np.isnan(bold_imgs)] = 0
         # compute ISC
-        logger.info("Computing ISC"
+        logger.info("Computing ISC \n"
                     ">>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         isc_imgs = isc(bold_imgs, pairwise=pairwise)
         logger.info(f"CPU usage (%): {psutil.virtual_memory()[2]}")
@@ -82,7 +82,7 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
                                     f'temporalISC.nii.gz')
         # free up memory
         del bold_imgs, isc_imgs
-        logger.info("--------------------------------------------------------"
+        logger.info("-------------------------------------------------------\n"
                     f"Done workflow for {task} \n"
                     "--------------------------------------------------------")
 
