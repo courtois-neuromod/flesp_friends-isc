@@ -43,7 +43,7 @@ def surface_isc_plots(data_dir, subjects=subjects, tasks=tasks,
     logger = logging.getLogger(__name__)
     for subject in subjects:
         for view, task in itertools.product(views, tasks):
-            logger.info(f"{view} | {task}")
+            logger.info(f"{subject} | {task} | {view}")
             isc_files = sorted(glob.glob(
                                 f'{data_dir}/{task}/{subject}*.nii.gz'))
             average_isc = image.mean_img(isc_files)

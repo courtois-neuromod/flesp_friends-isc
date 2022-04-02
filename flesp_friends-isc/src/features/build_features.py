@@ -65,7 +65,9 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         isc_imgs = isc(bold_imgs, pairwise=pairwise)
         logger.info("Saving images")
         # save ISC maps per subject
-        for n, subj in enumerate(subjects):
+        for n, fn in enumerate(files):
+            _, sub = os.path.split(fn)
+            logger.info(sub[:6])
             # Make the ISC output a volume
             isc_vol = np.zeros(brain_nii.shape)
             # Map the ISC data for the first participant into brain space
@@ -78,11 +80,11 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
             # Save the ISC data as a volume
 
             try:
-                nib.save(isc_nifti, f'{isc_map_path}/{task}/{subj}_{task}_'
+                nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
                                     f'temporalISC.nii.gz')
             except FileNotFoundError:
                 os.mkdir(f"{isc_map_path}/{task}")
-                nib.save(isc_nifti, f'{isc_map_path}/{task}/{subj}_{task}_'
+                nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
                                     f'temporalISC.nii.gz')
         # free up memory
         del bold_imgs, isc_imgs
