@@ -21,8 +21,8 @@ for task in sorted(episodes):
     tasks.append(task[-13:-1])
 
 
-#@click.command()
-#@click.argument('data_dir', type=click.Path(exists=True))
+@click.command()
+@click.argument('data_dir', type=click.Path(exists=True))
 def surface_isc_plots(data_dir, subjects=subjects, tasks=tasks,
                       views=['lateral', 'medial'], hemi='left',
                       threshold=0.2, vmax=None):
@@ -101,21 +101,22 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind='temporal'):
     if kind not in ['spatial', 'temporal']:
         err_msg = 'Unrecognized ISC type! Must be spatial or temporal'
         raise ValueError(err_msg)
+    seasons = ['s01', 's02', 's03', 's04', 's05']
+    for czn in seasons:
+        isc_files = sorted(glob.glob(f'{data_dir}/{czn}/*.nii.gz'))
+        masker = input_data.NiftiMasker(mask_img=mask_img)
+        logger.info("Mask loaded")
 
-    isc_files = sorted(glob.glob(f'{data_dir}/*/*.nii.gz'))
-    masker = input_data.NiftiMasker(mask_img=mask_img)
-    logger.info("Mask loaded")
+        isc = [masker.fit_transform(i).mean(axis=0) for i in isc_files]
+        logger.info("Mask applied")
+        corr = np.corrcoef(np.row_stack(isc))
+        logger.info("Computed cross-correlation")
 
-    isc = [masker.fit_transform(i).mean(axis=0) for i in isc_files]
-    logger.info("Mask applied")
-    corr = np.corrcoef(np.row_stack(isc))
-    logger.info("Computed cross-correlation")
-
-    # our 'communities' are which film was presented
-    segment = [i.split('_task-')[-1].strip('.nii.gz') for i in isc_files]
-    num = [i for i, m in enumerate(set(segment))]
-    mapping = dict(zip(set(segment), num))
-    comm = list(map(mapping.get, segment))
+        # our 'communities' are which film was presented
+        segment = [i.split('_task-')[-1].strip('.nii.gz') for i in isc_files]
+        num = [i for i, m in enumerate(set(segment))]
+        mapping = dict(zip(set(segment), num))
+        comm = list(map(mapping.get, segment))
 
     plot_mod_heatmap(corr, communities=np.asarray(comm),
                      inds=range(len(corr)), edgecolor='white')
@@ -145,33 +146,33 @@ def plot_axial_slice(data_dir, tasks=tasks, taskwise=False, kind='temporal'):
         err_msg = 'Unrecognized ISC type! Must be spatial or temporal'
         raise ValueError(err_msg)
     if taskwise:
-        logger.info()
+        logger.info('taskwise')
         for task in tasks:
-            files = glob.glob(f'data_dir/{task}/{kind}*.nii.gz')
+            files = glob.glob(f'{data_dir}/{task}/*.nii.gz')
             average = image.mean_img(files)
 
             # NOTE: threshold may need to be adjusted for each decoding task
             plotting.plot_stat_map(
                 average,
                 threshold=0.2, vmax=0.75, symmetric_cbar=False,
-                display_mode='z', cut_coords=[-24, -6, 7, 25, 37, 51, 65],
+                display_mode='z', cut_coords=[-24, -6, 3, 25, 37, 51, 65],
                 title=f"{kind} ISC on {task}",
             )
             plt.savefig(f'/scratch/flesp/figures/{task}/{kind}ISC_on_{task}.png',
                         bbox_inches='tight')
     else:
-        logger.info()
-        files = glob.glob(f'data_dir/*/{kind}*.nii.gz')
+        logger.info('All tasks averaging')
+        files = glob.glob(f'{data_dir}/*/*.nii.gz')
         average = image.mean_img(files)
 
         # NOTE: threshold may need to be adjusted for each decoding task
         plotting.plot_stat_map(
             average,
             threshold=0.2, vmax=0.75, symmetric_cbar=False,
-            display_mode='z', cut_coords=[-24, -6, 7, 25, 37, 51, 65],
-            title=f"{kind} ISC on {task}",
+            display_mode='z', cut_coords=[-24, -6, 3, 25, 37, 51, 65],
+            title=f"{kind} ISC averaged across episodes",
         )
-        plt.savefig(f'/scratch/flesp/figures/{task}/{kind}ISC_on_{task}.png',
+        plt.savefig(f'/scratch/flesp/figures/{kind}ISC_on_All.png',
                     bbox_inches='tight')
 
 
@@ -179,6 +180,6 @@ if __name__ == '__main__':
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
-    surface_isc_plots()
+    #surface_isc_plots()
     plot_corr_mtx()
     plot_axial_slice()
