@@ -21,8 +21,8 @@ for task in sorted(episodes):
     tasks.append(task[-13:-1])
 
 
-@click.command()
-@click.argument('data_dir', type=click.Path(exists=True))
+#@click.command()
+#@click.argument('data_dir', type=click.Path(exists=True))
 def surface_isc_plots(data_dir, subjects=subjects, tasks=tasks,
                       views=['lateral', 'medial'], hemi='left',
                       threshold=0.2, vmax=None):
@@ -80,7 +80,7 @@ def surface_isc_plots(data_dir, subjects=subjects, tasks=tasks,
 
 @click.command()
 @click.argument('data_dir', type=click.Path(exists=True))
-def plot_corr_mtx(data_dir, mask_img, kind='temporal'):
+def plot_corr_mtx(data_dir, mask_img=brain_mask, kind='temporal'):
     """
     Plot Correlation matrix.
 
@@ -97,15 +97,19 @@ def plot_corr_mtx(data_dir, mask_img, kind='temporal'):
     """
     logger = logging.getLogger(__name__)
     from netneurotools.plotting import plot_mod_heatmap
+    logger.info("Imported netneurotools util")
     if kind not in ['spatial', 'temporal']:
         err_msg = 'Unrecognized ISC type! Must be spatial or temporal'
         raise ValueError(err_msg)
 
     isc_files = sorted(glob.glob(f'{data_dir}/*/*.nii.gz'))
     masker = input_data.NiftiMasker(mask_img=mask_img)
+    logger.info("Mask loaded")
 
     isc = [masker.fit_transform(i).mean(axis=0) for i in isc_files]
+    logger.info("Mask applied")
     corr = np.corrcoef(np.row_stack(isc))
+    logger.info("Computed cross-correlation")
 
     # our 'communities' are which film was presented
     segment = [i.split('_task-')[-1].strip('.nii.gz') for i in isc_files]
@@ -115,6 +119,7 @@ def plot_corr_mtx(data_dir, mask_img, kind='temporal'):
 
     plot_mod_heatmap(corr, communities=np.asarray(comm),
                      inds=range(len(corr)), edgecolor='white')
+    logger.info("Plot is generated")
     plt.savefig(f'/scratch/flesp/figures/'
                 '{kind}ISC_correlation_matrix_with_anat.png',
                 bbox_inches='tight')
