@@ -102,8 +102,10 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind='temporal'):
         err_msg = 'Unrecognized ISC type! Must be spatial or temporal'
         raise ValueError(err_msg)
     seasons = ['s01', 's02', 's03', 's04', 's05']
+    mapping = {}
     for czn in seasons:
-        isc_files = sorted(glob.glob(f'{data_dir}/{czn}/*.nii.gz'))
+        logger.info(f"Season {czn[2:]} communities")
+        isc_files = sorted(glob.glob(f'{data_dir}/*{czn}*/*.nii.gz'))
         masker = input_data.NiftiMasker(mask_img=mask_img)
         logger.info("Mask loaded")
 
@@ -113,16 +115,15 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind='temporal'):
         logger.info("Computed cross-correlation")
 
         # our 'communities' are which film was presented
-        segment = [i.split('_task-')[-1].strip('.nii.gz') for i in isc_files]
-        num = [i for i, m in enumerate(set(segment))]
-        mapping = dict(zip(set(segment), num))
-        comm = list(map(mapping.get, segment))
+        num = [i for i, m in enumerate(czn)]
+        mapping = dict(zip(czn, num))
+        comm = list(map(mapping.get, czn))
 
     plot_mod_heatmap(corr, communities=np.asarray(comm),
                      inds=range(len(corr)), edgecolor='white')
     logger.info("Plot is generated")
     plt.savefig(f'/scratch/flesp/figures/'
-                '{kind}ISC_correlation_matrix_with_anat.png',
+                f'{kind}ISC_correlation_matrix_with_anat.png',
                 bbox_inches='tight')
 
 
@@ -146,11 +147,11 @@ def plot_axial_slice(data_dir, tasks=tasks, taskwise=False, kind='temporal'):
         err_msg = 'Unrecognized ISC type! Must be spatial or temporal'
         raise ValueError(err_msg)
     if taskwise:
-        logger.info('taskwise')
+        logger.info('Taskwise visualization')
         for task in tasks:
             files = glob.glob(f'{data_dir}/{task}/*.nii.gz')
             average = image.mean_img(files)
-
+            logger.info(f"Plotting {task}")
             # NOTE: threshold may need to be adjusted for each decoding task
             plotting.plot_stat_map(
                 average,
@@ -158,8 +159,18 @@ def plot_axial_slice(data_dir, tasks=tasks, taskwise=False, kind='temporal'):
                 display_mode='z', cut_coords=[-24, -6, 3, 25, 37, 51, 65],
                 title=f"{kind} ISC on {task}",
             )
-            plt.savefig(f'/scratch/flesp/figures/{task}/{kind}ISC_on_{task}.png',
-                        bbox_inches='tight')
+            fn = str(f'/scratch/flesp/figures/{task}/'
+                     f'{kind}ISC_on_{task}.png')
+            if os.path.exists(fn):
+                os.remove(fn)
+            try:
+                plt.savefig(fn, bbox_inches='tight')
+            except FileNotFoundError:
+                logger.info(f"Creating path for {task}")
+                os.mkdir(f'/scratch/flesp/figures/{task}/')
+                plt.savefig(fn, bbox_inches='tight')
+
+            plt.close('all')
     else:
         logger.info('All tasks averaging')
         files = glob.glob(f'{data_dir}/*/*.nii.gz')

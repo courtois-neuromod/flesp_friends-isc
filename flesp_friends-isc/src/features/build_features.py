@@ -5,23 +5,26 @@ import logging
 from dotenv import find_dotenv, load_dotenv
 import glob
 import numpy as np
-from brainiak.isc import isc
+from brainiak.isc import isc, isfc
 from brainiak import image, io
 import nibabel as nib
+from nilearn.maskers import NiftiLabelsMasker
+from nilearn.datasets import fetch_atlas_harvard_oxford
 
 subjects = ['sub-01', 'sub-02', 'sub-03',
             'sub-04', 'sub-05', 'sub-06']
 
 mask_name = 'tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz'
-brain_mask = io.load_boolean_mask(mask_name)
-coords = np.where(brain_mask)
+
+
 brain_nii = nib.load(mask_name)
 
 
 @click.command()
 @click.argument('postproc_path', type=click.Path(exists=True))
 @click.argument('isc_map_path', type=click.Path(exists=True))
-def map_isc(postproc_path, isc_map_path, pairwise=False):
+def map_isc(postproc_path, isc_map_path, kind='temporal',
+            pairwise=False, roi=False):
     """
     Compute ISC for brain data.
 
@@ -43,8 +46,31 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
         # Fetch images and mask them
         images = io.load_images(files)
         logger.info("Loaded files")
-        masked_imgs = image.mask_images(images, brain_mask)
-        logger.info("Masked images")
+        # Parcel space or not
+        logger.info(f"Masking data using labels")
+        if roi:
+            atlas = fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',
+                                               symmetric_split=True)
+            brain_nii = atlas.maps
+            masker = NiftiLabelsMasker(labels_img=atlas.maps)
+            masked_imgs = masker.fit_transform(images)
+            # figure out missing rois
+            row_has_nan = np.zeros(shape=(len(atlas.labels)-1, dtype=bool)
+            # Check for nans in each images and listify
+            for n in range(len(files)):
+                row_has_nan_ = np.any(np.isnan(masked_imgs[:, :, n]), axis=0)
+                row_has_nan[row_has_nan_] = True
+            # coordinates/regions that contain nans
+            coords = np.logical_not(row_has_nan)
+            rois_filtered = np.array(atlas.labels[1:])[coords]
+            logger.info(f"{rois_filtered}")
+            masked_imgs = masked_imgs[:, roi_select, :]
+        # here we render in voxel space
+        else:
+            brain_mask = io.load_boolean_mask(mask_name)
+            coords = np.where(brain_mask)
+            masked_imgs = image.mask_images(images, brain_mask)
+            logger.info("Masked images")
 
         # compute ISC
         try:
@@ -57,12 +83,21 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
                     "\n------------------------------------------------------")
         # replace nans
         bold_imgs[np.isnan(bold_imgs)] = 0
-        # compute ISC
+
+        # Computing ISC
         logger.info("\n"
                     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                    f"|          Computing ISC {task}                  |\n"
+                    f"Computing {kind} ISC on {task}\n"
                     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        isc_imgs = isc(bold_imgs, pairwise=pairwise)
+        if pairwise:
+            logger.info(f"{kind} ISC with pairwise approach")
+        else:
+            logger.info(f"{kind} ISC with Leave-One-Out approach")
+        #
+        if kind == 'temporal':
+            isc_imgs = isc(bold_imgs, pairwise=pairwise)
+        elif kind == 'spatial':
+            isc_imgs = isfc(bold_imgs, pairwise=pairwise)
         logger.info("Saving images")
         # save ISC maps per subject
         for n, fn in enumerate(files):
@@ -81,11 +116,11 @@ def map_isc(postproc_path, isc_map_path, pairwise=False):
 
             try:
                 nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
-                                    f'temporalISC.nii.gz')
+                                    f'{kind}ISC.nii.gz')
             except FileNotFoundError:
                 os.mkdir(f"{isc_map_path}/{task}")
                 nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
-                                    f'temporalISC.nii.gz')
+                                    f'{kind}ISC.nii.gz')
         # free up memory
         del bold_imgs, isc_imgs
         logger.info("\n"

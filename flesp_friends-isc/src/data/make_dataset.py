@@ -9,9 +9,8 @@ import fnmatch
 import pprintpp
 import numpy as np
 import pandas as pd
-from nilearn.maskers import MultiNiftiMasker, NiftiMasker, NiftiLabelsMasker
+from nilearn.maskers import NiftiMasker
 from nilearn.interfaces.fmriprep import load_confounds_strategy
-from nilearn.datasets import fetch_atlas_harvard_oxford
 import nibabel as nib
 
 
@@ -32,23 +31,13 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
     confounds: np.ndarray
         Any confounds to correct for in the cleaned data set.
     """
-    # ROI workflow
-    if roi is True:
-        atlas = fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',
-                                           symmetric_split=True)
-        maskers = NiftiLabelsMasker(labels_img=atlas.maps, t_r=1.49,
-                                    standardize=False, detrend=True,
-                                    high_pass=0.01, low_pass=0.1,
-                                    smoothing_fwhm=fwhm)
-
-        cleaned = maskers.fit_transform(scans, confounds=confounds)
-        masked_imgs = maskers.inverse_transform(cleaned)
     # generic mask workflow
-    elif isinstance(masks, list) is False:
+    if isinstance(masks, list) is False:
         maskers = MultiNiftiMasker(mask_img=masks, t_r=1.49,
                                    standardize=False, detrend=True,
                                    high_pass=0.01, low_pass=0.1,
                                    smoothing_fwhm=fwhm)
+        cleaned = maskers.fit_transform(scans, confounds=confounds)
         masked_imgs = maskers.inverse_transform(cleaned)
     # individual anatomical mask subject-wise
     else:
@@ -107,8 +96,7 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
     return nifti_fnames, mask_fnames
 
 
-def process_episodewise(fnames, output_filepath, task_name,
-                        masks, fwhm, roi):
+def process_episodewise(fnames, output_filepath, task_name, masks, fwhm):
     """
     Process episodes.
 
@@ -140,8 +128,7 @@ def process_episodewise(fnames, output_filepath, task_name,
     masked_images = nifti_mask(scans=fnames,
                                masks=masks,
                                confounds=confs,
-                               fwhm=fwhm,
-                               roi=roi)
+                               fwhm=fwhm)
 
     # print the shape
     for i, img in enumerate(masked_images):
@@ -151,8 +138,6 @@ def process_episodewise(fnames, output_filepath, task_name,
               f'shape:{np.shape(img)}')
 
     tmpl = f'space-MNI152NLin2009cAsym_desc-fwhm{fwhm}'
-    if roi:
-        tmpl = 'ROI_atlas_harvard_oxford' + tmpl
 
     del confs
     for i, img in enumerate(masked_images):
@@ -196,7 +181,7 @@ def main(input_filepath, output_filepath):
         fnames.sort()
         masks.sort()
         process_episodewise(fnames, output_filepath, task_name,
-                            masks, fwhm=6, roi=False)
+                            masks, fwhm=6)
         logger.info(f'Done processing : {task_name} \n'
                     '---------------------------------')
 
