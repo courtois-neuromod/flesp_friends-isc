@@ -97,7 +97,8 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         if kind == 'temporal':
             isc_imgs = isc(bold_imgs, pairwise=pairwise)
         elif kind == 'spatial':
-            isc_imgs = isfc(bold_imgs, pairwise=pairwise)
+            isc_imgs = isc(np.transpose(bold_imgs, [1, 0, 2]),
+                           pairwise=pairwise)
         logger.info("Saving images")
         # save ISC maps per subject
         for n, fn in enumerate(files):
