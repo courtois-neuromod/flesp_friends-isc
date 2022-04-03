@@ -103,7 +103,7 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind='temporal'):
         raise ValueError(err_msg)
     seasons = ['s01', 's02', 's03', 's04', 's05']
     mapping = {}
-    for czn in seasons:
+    for i, czn in seasons:
         logger.info(f"Season {czn[2:]} communities")
         isc_files = sorted(glob.glob(f'{data_dir}/*{czn}*/*.nii.gz'))
         masker = input_data.NiftiMasker(mask_img=mask_img)
@@ -115,8 +115,7 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind='temporal'):
         logger.info("Computed cross-correlation")
 
         # our 'communities' are which film was presented
-        num = [i for i, m in enumerate(czn)]
-        mapping = dict(zip(czn, num))
+        mapping = dict(zip(czn, i))
         comm = list(map(mapping.get, czn))
 
     plot_mod_heatmap(corr, communities=np.asarray(comm),
