@@ -14,18 +14,13 @@ from nilearn.datasets import fetch_atlas_harvard_oxford
 subjects = ['sub-01', 'sub-02', 'sub-03',
             'sub-04', 'sub-05', 'sub-06']
 
-mask_name = 'tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz'
-
-
-brain_nii = nib.load(mask_name)
-
 
 @click.command()
 @click.argument('postproc_path', type=click.Path(exists=True))
 @click.argument('isc_map_path', type=click.Path(exists=True))
 @click.option()
 def map_isc(postproc_path, isc_map_path, kind='temporal',
-            pairwise=False, roi=False):
+            pairwise=False, roi=True):
     """
     Compute ISC for brain data.
 
@@ -60,7 +55,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             row_has_nan = np.zeros(shape=(len(atlas.labels)-1,), dtype=bool)
             # Check for nans in each images and listify
             for n in range(len(files)):
-                row_has_nan_ = np.any(np.isnan(masked_imgs[n]), axis=0)
+                row_has_nan_ = np.any(np.isnan(masked_imgs[:, :, n]), axis=0)
                 row_has_nan[row_has_nan_] = True
             # coordinates/regions that contain nans
             coords = np.logical_not(row_has_nan)
@@ -69,7 +64,9 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             masked_imgs = masked_imgs[:, coords, :]
         # here we render in voxel space
         else:
+            mask_name = 'tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz'
             brain_mask = io.load_boolean_mask(mask_name)
+            brain_nii = nib.load(mask_name)
             coords = np.where(brain_mask)
             masked_imgs = image.mask_images(images, brain_mask)
             logger.info("Masked images")
@@ -95,14 +92,14 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             logger.info(f"{kind} ISC with pairwise approach")
         else:
             logger.info(f"{kind} ISC with Leave-One-Out approach")
-        # transpose axis if looking at spatial correlation
+        #
         if kind == 'temporal':
             isc_imgs = isc(bold_imgs, pairwise=pairwise)
-        elif kind == 'spatial':
-            isc_imgs = isc(np.transpose(bold_imgs, [1, 0, 2]),
-                           pairwise=pairwise)
+        elif kind == 'fc':
+            isc_imgs = isc(bold_imgs, pairwise=pairwise)
         else:
             logger.info(f"Cannot compute {kind} ISC on {task}")
+            continue
         logger.info("Saving images")
         # save ISC maps per subject
         for n, fn in enumerate(files):
