@@ -8,7 +8,7 @@ import numpy as np
 from brainiak.isc import isc, isfc
 from brainiak import image, io
 import nibabel as nib
-from nilearn.datasets import fetch_atlas_harvard_oxford
+#from nilearn.datasets import fetch_atlas_harvard_oxford
 
 subjects = ['sub-01', 'sub-02', 'sub-03',
             'sub-04', 'sub-05', 'sub-06']
@@ -19,7 +19,7 @@ subjects = ['sub-01', 'sub-02', 'sub-03',
 @click.argument('isc_map_path', type=click.Path(exists=True))
 @click.option('--roi', type=bool)
 def map_isc(postproc_path, isc_map_path, kind='temporal',
-            pairwise=False, roi=True):
+            pairwise=False, roi=False):
     """
     Compute ISC for brain data.
 
@@ -44,11 +44,12 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         # Parcel space or not
         if roi is True:
             logger.info(f"Masking data using labels")
-            atlas = fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',
-                                               data_dir="/scratch/flesp/",
-                                               symmetric_split=True)
-            brain_nii = atlas.maps
-            masked_imgs = images.mask_images(labels_img=atlas.maps)
+            # atlas = fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',
+                                               # data_dir="/scratch/flesp/",
+                                               # symmetric_split=True)
+            brain_nii = io.load_boolean_mask("scratch/flesp/fsl/data/atlases/"
+                                             "HarvardOxford/*cort-maxprob-*25-2mm")
+            masked_imgs = image.mask_images(images, brain_nii)
             # figure out missing rois
             #row_has_nan = np.zeros(shape=(len(atlas.labels)-1,), dtype=bool)
             # Check for nans in each images and listify
