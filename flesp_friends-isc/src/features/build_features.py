@@ -115,14 +115,22 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             )
 
             # Save the ISC data as a volume
-
-            try:
-                nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
-                                    f'{kind}ISC.nii.gz')
-            except FileNotFoundError:
-                os.mkdir(f"{isc_map_path}/{task}")
-                nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
-                                    f'{kind}ISC.nii.gz')
+            if roi is True:
+                try:
+                    nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
+                                        f'ROI{kind}ISC.nii.gz')
+                except FileNotFoundError:
+                    os.mkdir(f"{isc_map_path}/{task}")
+                    nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
+                                        f'ROI{kind}ISC.nii.gz')
+            else:
+                try:
+                    nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
+                                        f'{kind}ISC.nii.gz')
+                except FileNotFoundError:
+                    os.mkdir(f"{isc_map_path}/{task}")
+                    nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
+                                        f'{kind}ISC.nii.gz')
         # free up memory
         del bold_imgs, isc_imgs
         logger.info("\n"
