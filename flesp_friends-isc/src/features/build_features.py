@@ -8,7 +8,6 @@ import numpy as np
 from brainiak.isc import isc, isfc
 from brainiak import image, io
 import nibabel as nib
-from nilearn.maskers import NiftiLabelsMasker
 from nilearn.datasets import fetch_atlas_harvard_oxford
 
 subjects = ['sub-01', 'sub-02', 'sub-03',
@@ -49,10 +48,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                                                data_dir="/scratch/flesp/",
                                                symmetric_split=True)
             brain_nii = atlas.maps
-            masker = NiftiLabelsMasker(labels_img=atlas.maps,
-                                       labels=atlas.labels,
-                                       standardize=True)
-            masked_imgs = masker.fit(images)
+            masked_imgs = images.mask_images(labels_img=atlas.maps)
             # figure out missing rois
             #row_has_nan = np.zeros(shape=(len(atlas.labels)-1,), dtype=bool)
             # Check for nans in each images and listify
