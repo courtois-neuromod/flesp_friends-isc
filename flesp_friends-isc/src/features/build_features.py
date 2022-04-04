@@ -5,7 +5,7 @@ import logging
 from dotenv import find_dotenv, load_dotenv
 import glob
 import numpy as np
-from brainiak.isc import isc
+from brainiak.isc import isc, isfc
 from brainiak import image, io
 import nibabel as nib
 from nilearn.maskers import NiftiLabelsMasker
@@ -18,7 +18,7 @@ subjects = ['sub-01', 'sub-02', 'sub-03',
 @click.command()
 @click.argument('postproc_path', type=click.Path(exists=True))
 @click.argument('isc_map_path', type=click.Path(exists=True))
-@click.option()
+@click.option('--roi', type=bool)
 def map_isc(postproc_path, isc_map_path, kind='temporal',
             pairwise=False, roi=True):
     """
@@ -50,7 +50,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                                                symmetric_split=True)
             brain_nii = atlas.maps
             masker = NiftiLabelsMasker(labels_img=atlas.maps)
-            masked_imgs = masker.fit_tranform(images)
+            masked_imgs = masker.fit_transform(images)
             # figure out missing rois
             row_has_nan = np.zeros(shape=(len(atlas.labels)-1,), dtype=bool)
             # Check for nans in each images and listify
@@ -95,8 +95,8 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         #
         if kind == 'temporal':
             isc_imgs = isc(bold_imgs, pairwise=pairwise)
-        elif kind == 'fc':
-            isc_imgs = isc(bold_imgs, pairwise=pairwise)
+        elif kind == 'spatial':
+            isc_imgs = isfc(bold_imgs, pairwise=pairwise)
         else:
             logger.info(f"Cannot compute {kind} ISC on {task}")
             continue
