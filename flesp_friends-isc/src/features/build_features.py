@@ -47,9 +47,11 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             # atlas = fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',
                                                # data_dir="/scratch/flesp/",
                                                # symmetric_split=True)
-            brain_nii = io.load_boolean_mask("scratch/flesp/fsl/data/atlases/"
-                                             "HarvardOxford/*cort-maxprob-*25-2mm")
-            masked_imgs = image.mask_images(images, brain_nii)
+            mask_name = "scratch/flesp/fsl/data/atlases/HarvardOxford/"
+                        "HarvardOxford-cortl-maxprob-thr25-2mm.nii.gz"
+            brain_nii = nib.load(mask_name)
+            brain_mask = io.load_boolean_mask(mask_name)
+            masked_imgs = image.mask_images(images, brain_mask)
             # figure out missing rois
             #row_has_nan = np.zeros(shape=(len(atlas.labels)-1,), dtype=bool)
             # Check for nans in each images and listify
