@@ -101,22 +101,23 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind='temporal'):
     if kind not in ['spatial', 'temporal']:
         err_msg = 'Unrecognized ISC type! Must be spatial or temporal'
         raise ValueError(err_msg)
-    seasons = ['s01', 's02', 's03', 's04', 's05']
-    mapping = {}
-    for i, czn in seasons:
-        logger.info(f"Season {czn[2:]} communities")
-        isc_files = sorted(glob.glob(f'{data_dir}/*{czn}*/*.nii.gz'))
-        masker = input_data.NiftiMasker(mask_img=mask_img)
-        logger.info("Mask loaded")
 
-        isc = [masker.fit_transform(i).mean(axis=0) for i in isc_files]
-        logger.info("Mask applied")
-        corr = np.corrcoef(np.row_stack(isc))
-        logger.info("Computed cross-correlation")
+    logger.info(f"Season 1 communities")
+    isc_files = sorted(glob.glob(f'{data_dir}/*s01*/*.nii.gz'))
+    masker = input_data.NiftiMasker(mask_img=mask_img)
+    logger.info("Mask loaded")
 
-        # our 'communities' are which film was presented
-        mapping = dict(zip(czn, i))
-        comm = list(map(mapping.get, czn))
+    isc = [masker.fit_transform(i).mean(axis=0) for i in isc_files]
+    logger.info("Mask applied")
+    corr = np.corrcoef(np.row_stack(isc))
+    logger.info("Computed cross-correlation")
+
+    # our 'communities' are which film was presented
+    episodes = [i.split('task-s01')[-1].strip(
+               '_temporalISC.nii.gz') for i in isc_files]
+    num = [i for i, m in enumerate(set(episodes))]
+    mapping = dict(zip(set(episodes), num))
+    comm = list(map(mapping.get, episodes))
 
     plot_mod_heatmap(corr, communities=np.asarray(comm),
                      inds=range(len(corr)), edgecolor='white')

@@ -5,7 +5,7 @@ import logging
 from dotenv import find_dotenv, load_dotenv
 import glob
 import numpy as np
-from brainiak.isc import isc, isfc
+from brainiak.isc import isc
 from brainiak import image, io
 import nibabel as nib
 from nilearn.maskers import NiftiLabelsMasker
@@ -23,6 +23,7 @@ brain_nii = nib.load(mask_name)
 @click.command()
 @click.argument('postproc_path', type=click.Path(exists=True))
 @click.argument('isc_map_path', type=click.Path(exists=True))
+@click.option()
 def map_isc(postproc_path, isc_map_path, kind='temporal',
             pairwise=False, roi=False):
     """
@@ -35,7 +36,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
     logger.info('Starting Temporal ISC workflow')
     tasks = glob.glob(f"{postproc_path}/*/")
     # walks subdirs with taks name (task-s01-e01a)
-    for task in sorted(tasks)[22:]:
+    for task in sorted(tasks):
         task = task[-13:-1]
         logger.info(f'Importing data')
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
@@ -47,24 +48,25 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         images = io.load_images(files)
         logger.info("Loaded files")
         # Parcel space or not
-        logger.info(f"Masking data using labels")
-        if roi:
+        if roi is True:
+            logger.info(f"Masking data using labels")
             atlas = fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',
+                                               data_dir="/scratch/flesp/",
                                                symmetric_split=True)
             brain_nii = atlas.maps
             masker = NiftiLabelsMasker(labels_img=atlas.maps)
-            masked_imgs = masker.fit_transform(images)
+            masked_imgs = masker.fit_tranform(images)
             # figure out missing rois
-            row_has_nan = np.zeros(shape=(len(atlas.labels)-1, dtype=bool)
+            row_has_nan = np.zeros(shape=(len(atlas.labels)-1,), dtype=bool)
             # Check for nans in each images and listify
             for n in range(len(files)):
-                row_has_nan_ = np.any(np.isnan(masked_imgs[:, :, n]), axis=0)
+                row_has_nan_ = np.any(np.isnan(masked_imgs[n]), axis=0)
                 row_has_nan[row_has_nan_] = True
             # coordinates/regions that contain nans
             coords = np.logical_not(row_has_nan)
             rois_filtered = np.array(atlas.labels[1:])[coords]
             logger.info(f"{rois_filtered}")
-            masked_imgs = masked_imgs[:, roi_select, :]
+            masked_imgs = masked_imgs[:, coords, :]
         # here we render in voxel space
         else:
             brain_mask = io.load_boolean_mask(mask_name)
@@ -89,16 +91,18 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                     f"Computing {kind} ISC on {task}\n"
                     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        if pairwise:
+        if pairwise is True:
             logger.info(f"{kind} ISC with pairwise approach")
         else:
             logger.info(f"{kind} ISC with Leave-One-Out approach")
-        #
+        # transpose axis if looking at spatial correlation
         if kind == 'temporal':
             isc_imgs = isc(bold_imgs, pairwise=pairwise)
         elif kind == 'spatial':
             isc_imgs = isc(np.transpose(bold_imgs, [1, 0, 2]),
                            pairwise=pairwise)
+        else:
+            logger.info(f"Cannot compute {kind} ISC on {task}")
         logger.info("Saving images")
         # save ISC maps per subject
         for n, fn in enumerate(files):
