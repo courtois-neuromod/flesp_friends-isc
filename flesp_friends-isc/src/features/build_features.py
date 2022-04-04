@@ -28,7 +28,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
     """
     # specify data path (leads to subdi
     logger = logging.getLogger(__name__)
-    logger.info('Starting Temporal ISC workflow')
+    logger.info(f'Starting {kind} ISC workflow')
     tasks = glob.glob(f"{postproc_path}/*/")
     # walks subdirs with taks name (task-s01-e01a)
     for task in sorted(tasks):
@@ -49,19 +49,21 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                                                data_dir="/scratch/flesp/",
                                                symmetric_split=True)
             brain_nii = atlas.maps
-            masker = NiftiLabelsMasker(labels_img=atlas.maps)
-            masked_imgs = masker.fit_transform(images)
+            masker = NiftiLabelsMasker(labels_img=atlas.maps,
+                                       labels=atlas.labels,
+                                       standardize=True)
+            masked_imgs = masker.fit(images)
             # figure out missing rois
-            row_has_nan = np.zeros(shape=(len(atlas.labels)-1,), dtype=bool)
+            #row_has_nan = np.zeros(shape=(len(atlas.labels)-1,), dtype=bool)
             # Check for nans in each images and listify
-            for n in range(len(files)):
-                row_has_nan_ = np.any(np.isnan(masked_imgs[:, :, n]), axis=0)
-                row_has_nan[row_has_nan_] = True
+            #for n in range(len(files)):
+            #    row_has_nan_ = np.any(np.isnan(masked_imgs[:, :, n]), axis=0)
+            #    row_has_nan[row_has_nan_] = True
             # coordinates/regions that contain nans
-            coords = np.logical_not(row_has_nan)
-            rois_filtered = np.array(atlas.labels[1:])[coords]
-            logger.info(f"{rois_filtered}")
-            masked_imgs = masked_imgs[:, coords, :]
+            #coords = np.logical_not(row_has_nan)
+            #rois_filtered = np.array(atlas.labels[1:])[coords]
+            #logger.info(f"{rois_filtered}")
+            #masked_imgs = masked_imgs[:, coords, :]
         # here we render in voxel space
         else:
             mask_name = 'tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz'
