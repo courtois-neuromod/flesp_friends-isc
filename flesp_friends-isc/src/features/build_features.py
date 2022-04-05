@@ -18,6 +18,7 @@ subjects = ['sub-01', 'sub-02', 'sub-03',
 @click.argument('postproc_path', type=click.Path(exists=True))
 @click.argument('isc_map_path', type=click.Path(exists=True))
 @click.option('--roi', type=bool)
+@click.option('--kind', type=str)
 def map_isc(postproc_path, isc_map_path, kind='temporal',
             pairwise=False, roi=False):
     """
