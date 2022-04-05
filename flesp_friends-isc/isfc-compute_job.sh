@@ -5,7 +5,7 @@
 #SBATCH --error=./isfc_maps_10.err
 #SBATCH --time=10:00:00
 #SBATCH --ntasks=6
-#SBATCH --mem-per-cpu=64G
+#SBATCH --mem-per-cpu=128G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=s5c7o8a6s1u8i7u8@courtois-neuromod.slack.com
 
