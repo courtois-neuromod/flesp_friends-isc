@@ -4,7 +4,7 @@
 #SBATCH --output=./viz_3.out
 #SBATCH --error=./viz_3.err
 #SBATCH --time=3:00:00
-#SBATCH --mem=16G
+#SBATCH --mem=32G
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=s5c7o8a6s1u8i7u8@courtois-neuromod.slack.com
 
