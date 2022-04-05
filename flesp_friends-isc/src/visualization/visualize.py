@@ -25,7 +25,7 @@ for task in sorted(episodes):
 @click.argument('data_dir', type=click.Path(exists=True))
 def surface_isc_plots(data_dir, subjects=subjects, tasks=tasks,
                       views=['lateral', 'medial'], hemi='left',
-                      threshold=0.2, vmax=None):
+                      threshold=0.2, vmax=1.0):
     """
     Plot surface subject-wise.
 
@@ -46,7 +46,12 @@ def surface_isc_plots(data_dir, subjects=subjects, tasks=tasks,
             logger.info(f"{subject} | {task} | {view}")
             isc_files = sorted(glob.glob(
                                 f'{data_dir}/{task}/{subject}*.nii.gz'))
-            average_isc = image.mean_img(isc_files)
+            try:
+                average_isc = image.mean_img(isc_files)
+            except StopIteration:
+                logger.info(f"No ISC map for this episode segment")
+                plt.close('all')
+                continue
             logger.info("Averaged BOLD images")
             # plot left hemisphere
             texture = surface.vol_to_surf(average_isc, fsaverage.pial_left)
@@ -191,6 +196,6 @@ if __name__ == '__main__':
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
-    #surface_isc_plots()
+    surface_isc_plots()
     plot_corr_mtx()
     plot_axial_slice()
