@@ -10,4 +10,4 @@
 
 workon flesp_friends-isc
 cd flesp_friends-isc
-make figures
+make figures USER_OPTIONS='--kind temporal'

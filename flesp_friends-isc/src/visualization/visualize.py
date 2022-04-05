@@ -23,9 +23,10 @@ for task in sorted(episodes):
 
 @click.command()
 @click.argument('data_dir', type=click.Path(exists=True))
+@click.option('--kind', type=str)
 def surface_isc_plots(data_dir, subjects=subjects, tasks=tasks,
-                      views=['lateral', 'medial'], hemi='left',
-                      threshold=0.2, vmax=1.0):
+                      kind='temporal', views=['lateral', 'medial'],
+                      hemi='left', threshold=0.2, vmax=1.0):
     """
     Plot surface subject-wise.
 
@@ -61,7 +62,7 @@ def surface_isc_plots(data_dir, subjects=subjects, tasks=tasks,
                 bg_map=fsaverage.sulc_left, view=view,
                 title=f"{subject} {task}")
             fn = str(f'/scratch/flesp/figures/{task}/'
-                     f'left_{view}_surfplot_ISC_on_{task}_{subject}.png')
+                     f'left_{view}_surfplot_{kind}ISC_on_{task}_{subject}.png')
             if os.path.exists(fn):
                 os.remove(fn)
             try:
@@ -78,7 +79,8 @@ def surface_isc_plots(data_dir, subjects=subjects, tasks=tasks,
                 bg_map=fsaverage.sulc_right, view=view,
                 title=f"{subject} {task}")
             plt.savefig(f'/scratch/flesp/figures/{task}/'
-                        f'right_{view}_surfplot_ISC_on_{task}_{subject}.png',
+                        f'right_{view}_surfplot_{kind}'
+                        f'ISC_on_{task}_{subject}.png',
                         bbox_inches='tight')
             plt.close('all')
 
