@@ -9,6 +9,7 @@ from nilearn.datasets import fetch_surf_fsaverage
 import matplotlib.pyplot as plt
 import numpy as np
 import nibabel as nib
+import fnmatch
 
 fsaverage = fetch_surf_fsaverage()
 mask_name = 'tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz'
@@ -47,6 +48,7 @@ def surface_isc_plots(data_dir, subjects=subjects, tasks=tasks,
             logger.info(f"{subject} | {task} | {view}")
             isc_files = sorted(glob.glob(
                                 f'{data_dir}/{task}/{subject}*.nii.gz'))
+            isc_files = fnmatch.filter(isc_files, f'*{kind}*')
             try:
                 average_isc = image.mean_img(isc_files)
             except StopIteration:
