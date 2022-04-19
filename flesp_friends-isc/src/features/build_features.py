@@ -147,7 +147,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             for n, fn in enumerate(files):
                 _, sub_a = os.path.split(fn)
                 for m in range(n+1, len(files)):
-                    _, sub_b = os.path.split(fn[m])
+                    _, sub_b = os.path.split(files[m])
                     logger.info(f"{sub_a[:6]} | {sub_b[:6]}")
                     pair = f"{sub_a[:6]}"+f"-{sub_b[:6]}"
                     # Make the ISC output a volume
