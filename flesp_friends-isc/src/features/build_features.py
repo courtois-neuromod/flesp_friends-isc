@@ -29,7 +29,8 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
     note
     """
     if pairwise is not None:
-        a, b = pairwise
+        a = pairwise[0]
+        b = pairwise[1]
         pair = str(a).join(f"x{b}")
     # specify data path (leads to subdi
     logger = logging.getLogger(__name__)
@@ -41,9 +42,9 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         logger.info(f'Importing data')
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
         if pairwise is not None:
-            a_fn = fnmatch.filter(files, a)
-            b_fn = fnmatch.filter(files, a)
-            files = [a_fn, b_fn]
+            a_fn = fnmatch.filter(files, f"*{a}*")
+            b_fn = fnmatch.filter(files, f"*{b}*")
+            files = a_fn.extend(b_fn)
             if len(files) == 1:
                 logger.info(f'missing data for {task}')
                 continue
