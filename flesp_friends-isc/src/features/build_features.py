@@ -30,7 +30,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
     """
     if pairwise is not None:
         a, b = pairwise
-        pair = str(a).join(f"_{b}")
+        pair = str(a).join(f"x{b}")
     # specify data path (leads to subdi
     logger = logging.getLogger(__name__)
     logger.info(f'Starting {kind} ISC workflow')
@@ -44,6 +44,9 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             a_fn = fnmatch.filter(files, a)
             b_fn = fnmatch.filter(files, a)
             files = [a_fn, b_fn]
+            if len(files) == 1:
+                logger.info(f'missing data for {task}')
+                continue
         for fn in files:
             _, fn = os.path.split(fn)
             logger.info(fn[:6])
@@ -144,11 +147,11 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             elif pairwise:
                 try:
                     nib.save(isc_nifti, f'{isc_map_path}/{task}/{pair}_{task}_'
-                                        f'ROI{kind}ISC.nii.gz')
+                                        f'{kind}ISC.nii.gz')
                 except FileNotFoundError:
                     os.mkdir(f"{isc_map_path}/{task}")
                     nib.save(isc_nifti, f'{isc_map_path}/{task}/{pair}_{task}_'
-                                        f'ROI{kind}ISC.nii.gz')
+                                        f'{kind}ISC.nii.gz')
             else:
                 try:
                     nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
