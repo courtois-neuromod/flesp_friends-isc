@@ -1,6 +1,7 @@
 """ISC workflow."""
 import os
 import click
+import fnmatch
 import logging
 from dotenv import find_dotenv, load_dotenv
 import glob
@@ -19,13 +20,17 @@ subjects = ['sub-01', 'sub-02', 'sub-03',
 @click.argument('isc_map_path', type=click.Path(exists=True))
 @click.option('--roi', type=bool)
 @click.option('--kind', type=str)
+@click.option('--pairwise', nargs=2, type=str)
 def map_isc(postproc_path, isc_map_path, kind='temporal',
-            pairwise=False, roi=False):
+            pairwise=None, roi=False):
     """
     Compute ISC for brain data.
 
     note
     """
+    if pairwise is not None:
+        a, b = pairwise
+        pair = str(a).join(f"_{b}")
     # specify data path (leads to subdi
     logger = logging.getLogger(__name__)
     logger.info(f'Starting {kind} ISC workflow')
@@ -35,7 +40,10 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         task = task[-13:-1]
         logger.info(f'Importing data')
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
-        logger.info("File order")
+        if pairwise is not None:
+            a_fn = fnmatch.filter(files, a)
+            b_fn = fnmatch.filter(files, a)
+            files = [a_fn, b_fn]
         for fn in files:
             _, fn = os.path.split(fn)
             logger.info(fn[:6])
@@ -89,7 +97,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                     f"Computing {kind} ISC on {task}\n"
                     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        if pairwise is True:
+        if pairwise:
             logger.info(f"{kind} ISC with pairwise approach")
         else:
             logger.info(f"{kind} ISC with Leave-One-Out approach")
@@ -102,19 +110,28 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             logger.info(f"Cannot compute {kind} ISC on {task}")
             continue
         logger.info("Saving images")
-        # save ISC maps per subject
-        for n, fn in enumerate(files):
-            _, sub = os.path.split(fn)
-            logger.info(sub[:6])
+        if pairwise is None:
+            # save ISC maps per subject
+            for n, fn in enumerate(files):
+                _, sub = os.path.split(fn)
+                logger.info(sub[:6])
+                # Make the ISC output a volume
+                isc_vol = np.zeros(brain_nii.shape)
+                # Map the ISC data for the first participant into brain space
+                isc_vol[coords] = isc_imgs[n, :]
+                # make a nii image of the isc map
+                isc_nifti = nib.Nifti1Image(
+                    isc_vol, brain_nii.affine, brain_nii.header
+                )
+        else:
             # Make the ISC output a volume
             isc_vol = np.zeros(brain_nii.shape)
             # Map the ISC data for the first participant into brain space
-            isc_vol[coords] = isc_imgs[n, :]
+            isc_vol[coords] = isc_imgs
             # make a nii image of the isc map
             isc_nifti = nib.Nifti1Image(
                 isc_vol, brain_nii.affine, brain_nii.header
             )
-
             # Save the ISC data as a volume
             if roi is True:
                 try:
@@ -123,6 +140,14 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                 except FileNotFoundError:
                     os.mkdir(f"{isc_map_path}/{task}")
                     nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
+                                        f'ROI{kind}ISC.nii.gz')
+            elif pairwise:
+                try:
+                    nib.save(isc_nifti, f'{isc_map_path}/{task}/{pair}_{task}_'
+                                        f'ROI{kind}ISC.nii.gz')
+                except FileNotFoundError:
+                    os.mkdir(f"{isc_map_path}/{task}")
+                    nib.save(isc_nifti, f'{isc_map_path}/{task}/{pair}_{task}_'
                                         f'ROI{kind}ISC.nii.gz')
             else:
                 try:
