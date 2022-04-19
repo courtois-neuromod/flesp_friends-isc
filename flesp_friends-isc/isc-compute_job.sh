@@ -11,4 +11,4 @@
 
 workon flesp_friends-isc
 cd flesp_friends-isc
-make features
+make features USER_OPTIONS="--roi False --kind temporal --pairwise sub-01 sub-06"
