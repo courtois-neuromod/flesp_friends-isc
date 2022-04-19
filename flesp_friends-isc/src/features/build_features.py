@@ -20,18 +20,15 @@ subjects = ['sub-01', 'sub-02', 'sub-03',
 @click.argument('isc_map_path', type=click.Path(exists=True))
 @click.option('--roi', type=bool)
 @click.option('--kind', type=str)
-@click.option('--pairwise', nargs=2, type=str)
+@click.option('--pairwise', type=bool)
+@click.option('--drop', type=str)
 def map_isc(postproc_path, isc_map_path, kind='temporal',
-            pairwise=None, roi=False):
+            pairwise=None, roi=False, drop=None):
     """
     Compute ISC for brain data.
 
     note
     """
-    if pairwise is not None:
-        a = pairwise[0]
-        b = pairwise[1]
-        pair = str(a).join(f"x{b}")
     # specify data path (leads to subdi
     logger = logging.getLogger(__name__)
     logger.info(f'Starting {kind} ISC workflow')
@@ -41,13 +38,14 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         task = task[-13:-1]
         logger.info(f'Importing data')
         files = sorted(glob.glob(f'{postproc_path}/{task}/*.nii.gz*'))
-        if pairwise is not None:
-            a_fn = fnmatch.filter(files, f"*{a}*")
-            b_fn = fnmatch.filter(files, f"*{b}*")
-            files = a_fn.extend(b_fn)
-            if len(files) == 1:
-                logger.info(f'missing data for {task}')
-                continue
+
+        if drop is None:
+            logger.info('Considering all subjects for ISCs')
+        else:
+            fn_to_remove = fnmatch.filter(files, f"*{drop}*")
+            logger.info(f'Not considering all subjects for ISCs \n'
+                        f'Removing : {fn_to_remove}')
+            files.remove(fn_to_remove)
         for fn in files:
             _, fn = os.path.split(fn)
             logger.info(fn[:6])
@@ -127,40 +125,48 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                 isc_nifti = nib.Nifti1Image(
                     isc_vol, brain_nii.affine, brain_nii.header
                 )
+                # Save the ISC data as a volume
+                if roi is True:
+                    try:
+                        nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}'
+                                            f'_{task}_ROI{kind}ISC.nii.gz')
+                    except FileNotFoundError:
+                        os.mkdir(f"{isc_map_path}/{task}")
+                        nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}'
+                                            f'_{task}_ROI{kind}ISC.nii.gz')
+                else:
+                    try:
+                        nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}'
+                                            f'_{task}_{kind}ISC.nii.gz')
+                    except FileNotFoundError:
+                        os.mkdir(f"{isc_map_path}/{task}")
+                        nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}'
+                                            f'_{task}_{kind}ISC.nii.gz')
         else:
-            # Make the ISC output a volume
-            isc_vol = np.zeros(brain_nii.shape)
-            # Map the ISC data for the first participant into brain space
-            isc_vol[coords] = isc_imgs
-            # make a nii image of the isc map
-            isc_nifti = nib.Nifti1Image(
-                isc_vol, brain_nii.affine, brain_nii.header
-            )
-            # Save the ISC data as a volume
-            if roi is True:
-                try:
-                    nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
-                                        f'ROI{kind}ISC.nii.gz')
-                except FileNotFoundError:
-                    os.mkdir(f"{isc_map_path}/{task}")
-                    nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
-                                        f'ROI{kind}ISC.nii.gz')
-            elif pairwise:
-                try:
-                    nib.save(isc_nifti, f'{isc_map_path}/{task}/{pair}_{task}_'
-                                        f'{kind}ISC.nii.gz')
-                except FileNotFoundError:
-                    os.mkdir(f"{isc_map_path}/{task}")
-                    nib.save(isc_nifti, f'{isc_map_path}/{task}/{pair}_{task}_'
-                                        f'{kind}ISC.nii.gz')
-            else:
-                try:
-                    nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
-                                        f'{kind}ISC.nii.gz')
-                except FileNotFoundError:
-                    os.mkdir(f"{isc_map_path}/{task}")
-                    nib.save(isc_nifti, f'{isc_map_path}/{task}/{sub}_{task}_'
-                                        f'{kind}ISC.nii.gz')
+            c = 0
+            for n, fn in enumerate(files):
+                _, sub_a = os.path.split(fn)
+                for m in range(n+1, len(files)):
+                    _, sub_b = os.path.split(fn[m])
+                    logger.info(f"{sub_a[:6]} | {sub_b[:6]}")
+                    pair = f"{sub_a[:6]}"+f"-{sub_b[:6]}"
+                    # Make the ISC output a volume
+                    isc_vol = np.zeros(brain_nii.shape)
+                    # Map the ISC data for the first participant into brain space
+                    isc_vol[coords] = isc_imgs[c, :]
+                    # make a nii image of the isc map
+                    isc_nifti = nib.Nifti1Image(
+                        isc_vol, brain_nii.affine, brain_nii.header
+                    )
+                    try:
+                        nib.save(isc_nifti, f'{isc_map_path}/{task}/{pair}'
+                                            f'_{task}_{kind}ISC.nii.gz')
+                    except FileNotFoundError:
+                        os.mkdir(f"{isc_map_path}/{task}")
+                        nib.save(isc_nifti, f'{isc_map_path}/{task}/{pair}'
+                                            f'_{task}_{kind}ISC.nii.gz')
+                    c += 1
+
         # free up memory
         del bold_imgs, isc_imgs
         logger.info("\n"
