@@ -45,7 +45,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             fn_to_remove = fnmatch.filter(files, f"*{drop}*")
             logger.info(f'Not considering all subjects for ISCs \n'
                         f'Removing : {fn_to_remove}')
-            files.remove(fn_to_remove)
+            files.remove(fn_to_remove[0])
         for fn in files:
             _, fn = os.path.split(fn)
             logger.info(fn[:6])
