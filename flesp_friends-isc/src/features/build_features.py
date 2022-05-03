@@ -55,24 +55,18 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         # Parcel space or not
         if roi is True:
             logger.info(f"Masking data using labels")
-            # atlas = fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',
-                                               # data_dir="/scratch/flesp/",
-                                               # symmetric_split=True)
             mask_name = "scratch/flesp/fsl/data/atlases/HarvardOxford/HarvardOxford-cortl-maxprob-thr25-2mm.nii.gz"
             brain_nii = nib.load(mask_name)
-            brain_mask = io.load_boolean_mask(mask_name)
-            masked_imgs = image.mask_images(images, brain_mask)
-            # figure out missing rois
-            #row_has_nan = np.zeros(shape=(len(atlas.labels)-1,), dtype=bool)
-            # Check for nans in each images and listify
-            #for n in range(len(files)):
-            #    row_has_nan_ = np.any(np.isnan(masked_imgs[:, :, n]), axis=0)
-            #    row_has_nan[row_has_nan_] = True
-            # coordinates/regions that contain nans
-            #coords = np.logical_not(row_has_nan)
-            #rois_filtered = np.array(atlas.labels[1:])[coords]
-            #logger.info(f"{rois_filtered}")
-            #masked_imgs = masked_imgs[:, coords, :]
+            brain_mask = brain_nii.get_fdata()
+            parcels = []
+            for one_subfn in files:
+                one_subbold = nib.load(one_subfn).get_fdata()
+                avg_parcels = [np.mean(one_subbold[brain_mask == parcel, :],
+                                       axis=0)
+                               for parcel in np.unique(brain_mask)[1:]]
+                parcels.append(np.column_stack(avg_parcels))
+            masked_imgs = np.dstack(parcels)
+
         # here we render in voxel space
         else:
             mask_name = 'tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz'
@@ -107,7 +101,9 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         if kind == 'temporal':
             isc_imgs = isc(bold_imgs, pairwise=pairwise)
         elif kind == 'spatial':
-            isc_imgs = isfc(bold_imgs, pairwise=pairwise)
+            isc_imgs = isfc(bold_imgs, pairwise=pairwise,
+                            vectorize_isfcs=False,
+                            summary_statistic='mean')
         else:
             logger.info(f"Cannot compute {kind} ISC on {task}")
             continue

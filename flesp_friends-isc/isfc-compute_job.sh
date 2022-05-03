@@ -11,4 +11,4 @@
 
 workon flesp_friends-isc
 cd flesp_friends-isc
-make features USER_OPTIONS="--roi False --kind spatial"
+make features USER_OPTIONS="--roi True --kind spatial"
