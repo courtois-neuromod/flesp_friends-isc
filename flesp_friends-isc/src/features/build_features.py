@@ -9,7 +9,7 @@ import numpy as np
 from brainiak.isc import isc, isfc
 from brainiak import image, io
 import nibabel as nib
-#from nilearn.datasets import fetch_atlas_harvard_oxford
+from nilearn.inpout_data import NiftiLabelsMasker
 
 subjects = ['sub-01', 'sub-02', 'sub-03',
             'sub-04', 'sub-05', 'sub-06']
@@ -55,18 +55,15 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         # Parcel space or not
         if roi is True:
             logger.info(f"Masking data using labels")
-            mask_name = "scratch/flesp/fsl/data/atlases/HarvardOxford/HarvardOxford-cortl-maxprob-thr25-2mm.nii.gz"
+            mask_name = "/scratch/flesp/fsl/data/atlases/HarvardOxford/HarvardOxford-cortl-maxprob-thr25-2mm.nii.gz"
             brain_nii = nib.load(mask_name)
             brain_mask = brain_nii.get_fdata()
-            parcels = []
-            for one_subfn in files:
-                one_subbold = nib.load(one_subfn).get_fdata()
-                avg_parcels = [np.mean(one_subbold[brain_mask == parcel, :],
-                                       axis=0)
-                               for parcel in np.unique(brain_mask)[1:]]
-                parcels.append(np.column_stack(avg_parcels))
-            masked_imgs = np.dstack(parcels)
-
+            masker = NiftiLabelsMasker(labels_img=brain_nii.get_filename(),
+                                       standardize=True, verbose=5)
+            bold_imgs = []
+            for fn in files:
+                timeserie = masker.fit_transform(fn)
+                bold_imgs.append(timeserie)
         # here we render in voxel space
         else:
             mask_name = 'tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz'
@@ -76,17 +73,16 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             masked_imgs = image.mask_images(images, brain_mask)
             logger.info("Masked images")
 
-        # compute ISC
-        try:
-            bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
-                masked_imgs, len(files))
-        except ValueError:
-            logger.info(f"Can't perform MaskedMultiSubjectData on {task}")
-            continue
+            try:
+                bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
+                    masked_imgs, len(files))
+                # replace nans
+                bold_imgs[np.isnan(bold_imgs)] = 0
+            except ValueError:
+                logger.info(f"Can't perform MaskedMultiSubjectData on {task}")
+                continue
         logger.info(f"Correctly imported masked images for {len(files)} subjs"
                     "\n------------------------------------------------------")
-        # replace nans
-        bold_imgs[np.isnan(bold_imgs)] = 0
 
         # Computing ISC
         logger.info("\n"
@@ -101,9 +97,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         if kind == 'temporal':
             isc_imgs = isc(bold_imgs, pairwise=pairwise)
         elif kind == 'spatial':
-            isc_imgs = isfc(bold_imgs, pairwise=pairwise,
-                            vectorize_isfcs=False,
-                            summary_statistic='mean')
+            isc_imgs = isfc(bold_imgs, pairwise=pairwise)
         else:
             logger.info(f"Cannot compute {kind} ISC on {task}")
             continue
