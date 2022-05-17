@@ -35,6 +35,13 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
     logger = logging.getLogger(__name__)
     logger.info(f'Starting {kind} ISC workflow')
     tasks = glob.glob(f"{postproc_path}/*/")
+
+    # mask and info
+    mask_name = 'tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz'
+    brain_mask = io.load_boolean_mask(mask_name)
+    brain_nii = nib.load(mask_name)
+    coords = np.where(brain_mask)
+
     # walks subdirs with taks name (task-s01-e01a)
     for task in sorted(tasks):
         task = task[-13:-1]
@@ -51,9 +58,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         for fn in files:
             _, fn = os.path.split(fn)
             logger.info(fn[:6])
-        # Fetch images and mask them
-        images = io.load_images(files)
-        logger.info("Loaded files")
+
         # Parcel space or not
         if roi is True:
             logger.info(f"Masking data using labels")
@@ -66,12 +71,37 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             for fn in files:
                 timeserie = masker.fit_transform(fn)
                 bold_imgs.append(timeserie)
+
         # here we render in voxel space
+        # Option to segment run in smaller windows
+        elif slices is True:
+
+            masked_imgs
+            sub_sliced = {}
+            # Fetch images
+            for i, fn in enumerate(files):
+                img = nib.load(fn)
+                timeserie = img.get_fdata()
+                lng = 40
+                imgs_sub=[]
+                # slice them subject-wise
+                for idx in range(len(timeserie)-lng):
+                    slx = slice(0 + idx, lng + idx, 5)
+                    sliced = nib.Nifti1Image(timeserie[:, :, :, slx])
+                    imgs_sub.append(sliced)
+                sub_sliced[i] = imgs_sub
+            # start by first segment in each subject and iterate 
+            for segment in range(len(sub_sliced[0]):
+                ls_imgs = []
+                # assemble a temporary list for each segment containing all subs
+                for sub in sub_sliced:
+                    ls_imgs.append(sub_sliced[sub])
+                # Mask every subject's segment and append in list
+                masked_imgs.append(image.mask_images(ls_imgs, brain_mask))
+
+        # mask the whole run
         else:
-            mask_name = 'tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz'
-            brain_mask = io.load_boolean_mask(mask_name)
-            brain_nii = nib.load(mask_name)
-            coords = np.where(brain_mask)
+            images = io.load_images(files)
             masked_imgs = image.mask_images(images, brain_mask)
             logger.info("Masked images")
 
@@ -101,10 +131,10 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                 isc_imgs = [isc(bold_imgs, pairwise=pairwise)]
             else:
                 isc_imgs = []
-                lng = 40
-                for idx in range(len(bold_imgs)-lng):
-                    slx = slice(0 + idx, lng + idx, 5)
-                    isc_seg = isc(index_img(bold_imgs, slx), pairwise=pairwise)
+                for obj in masked_imgs:
+                    bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
+                        obj, len(files))
+                    isc_seg = isc(bold_imgs), pairwise=pairwise)
                     isc_imgs.append(isc_seg)
         elif kind == 'spatial':
             isc_imgs = isfc(bold_imgs, pairwise=pairwise)
