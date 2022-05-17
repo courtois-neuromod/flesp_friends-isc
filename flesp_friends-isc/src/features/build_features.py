@@ -75,22 +75,23 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         # here we render in voxel space
         # Option to segment run in smaller windows
         elif slices is True:
-            masked_imgs
+            masked_imgs = []
             sub_sliced = {}
             # Fetch images
             for i, fn in enumerate(files):
                 img = nib.load(fn)
                 timeserie = img.get_fdata()
-                lng = 40
+                lng = 100
                 imgs_sub=[]
                 # slice them subject-wise
-                for idx in range(len(timeserie)-lng):
-                    slx = slice(0 + idx, lng + idx, 5)
-                    sliced = nib.Nifti1Image(timeserie[:, :, :, slx])
+                for idx in range(0, len(timeserie)-lng, 50):
+                    slx = slice(0 + idx, lng + idx)
+                    sliced = nib.Nifti1Image(timeserie[:, :, slx],
+                                             brain_nii.affine)
                     imgs_sub.append(sliced)
                 sub_sliced[i] = imgs_sub
             # start by first segment in each subject and iterate
-            for segment in range(len(sub_sliced[0]):
+            for segment in range(len(sub_sliced[0])):
                 ls_imgs = []
                 # assemble a temporary list for each segment containing all subs
                 for sub in sub_sliced:
@@ -133,7 +134,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                 for obj in masked_imgs:
                     bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
                         obj, len(files))
-                    isc_seg = isc(bold_imgs), pairwise=pairwise)
+                    isc_seg = isc(bold_imgs, pairwise=pairwise)
                     isc_imgs.append(isc_seg)
         elif kind == 'spatial':
             isc_imgs = isfc(bold_imgs, pairwise=pairwise)
