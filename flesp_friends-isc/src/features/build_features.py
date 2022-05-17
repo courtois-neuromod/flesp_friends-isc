@@ -178,7 +178,8 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                             nib.save(isc_nifti, f'{isc_map_path}/{task}/'
                                                 f'{sub}_{task}seg{idx:02d}'
                                                 f'_{kind}ISC.nii.gz')
-
+                    # free up memory
+                    del masked_imgs, isc_imgs
         else:
             c = 0
             for n, fn in enumerate(files):
@@ -204,8 +205,8 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                                             f'_{task}_{kind}ISC.nii.gz')
                     c += 1
 
-        # free up memory
-        del bold_imgs, isc_imgs
+            # free up memory
+            del bold_imgs, isc_imgs
         logger.info("\n"
                     "------------------------------------------------------\n"
                     f"          Done workflow for {task}             "
