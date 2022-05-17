@@ -157,27 +157,27 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                     isc_nifti = nib.Nifti1Image(
                         isc_vol, brain_nii.affine, brain_nii.header
                     )
-                        # Save the ISC data as a volume
-                        if roi is True:
-                            try:
-                                nib.save(isc_nifti, f'{isc_map_path}/{task}/'
-                                                    f'{sub}_{task}seg{idx:02d}'
-                                                    f'_ROI{kind}ISC.nii.gz')
-                            except FileNotFoundError:
-                                os.mkdir(f"{isc_map_path}/{task}")
-                                nib.save(isc_nifti, f'{isc_map_path}/{task}/'
-                                                    f'{sub}_{task}seg{idx:02d}'
-                                                    f'_ROI{kind}ISC.nii.gz')
-                        else:
-                            try:
-                                nib.save(isc_nifti, f'{isc_map_path}/{task}/'
-                                                    f'{sub}_{task}seg{idx:02d}'
-                                                    f'_{kind}ISC.nii.gz')
-                            except FileNotFoundError:
-                                os.mkdir(f"{isc_map_path}/{task}")
-                                nib.save(isc_nifti, f'{isc_map_path}/{task}/'
-                                                    f'{sub}_{task}seg{idx:02d}'
-                                                    f'_{kind}ISC.nii.gz')
+                    # Save the ISC data as a volume
+                    if roi is True:
+                        try:
+                            nib.save(isc_nifti, f'{isc_map_path}/{task}/'
+                                                f'{sub}_{task}seg{idx:02d}'
+                                                f'_ROI{kind}ISC.nii.gz')
+                        except FileNotFoundError:
+                            os.mkdir(f"{isc_map_path}/{task}")
+                            nib.save(isc_nifti, f'{isc_map_path}/{task}/'
+                                                f'{sub}_{task}seg{idx:02d}'
+                                                f'_ROI{kind}ISC.nii.gz')
+                    else:
+                        try:
+                            nib.save(isc_nifti, f'{isc_map_path}/{task}/'
+                                                f'{sub}_{task}seg{idx:02d}'
+                                                f'_{kind}ISC.nii.gz')
+                        except FileNotFoundError:
+                            os.mkdir(f"{isc_map_path}/{task}")
+                            nib.save(isc_nifti, f'{isc_map_path}/{task}/'
+                                                f'{sub}_{task}seg{idx:02d}'
+                                                f'_{kind}ISC.nii.gz')
 
         else:
             c = 0
