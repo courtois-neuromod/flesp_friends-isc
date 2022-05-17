@@ -23,8 +23,9 @@ subjects = ['sub-01', 'sub-02', 'sub-03',
 @click.option('--kind', type=str)
 @click.option('--pairwise', type=bool)
 @click.option('--drop', type=str)
+@click.option('--slices', type=bool)
 def map_isc(postproc_path, isc_map_path, kind='temporal',
-            pairwise=False, roi=False, drop=None, slice=False):
+            pairwise=False, roi=False, drop=None, slices=False):
     """
     Compute ISC for brain data.
 
@@ -96,8 +97,8 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             logger.info(f"{kind} ISC with Leave-One-Out approach")
         #
         if kind == 'temporal':
-            if slice is False:
-                isc_imgs = isc(bold_imgs, pairwise=pairwise)
+            if slices is False:
+                isc_imgs = [isc(bold_imgs, pairwise=pairwise)]
             else:
                 isc_imgs = []
                 lng = 40
@@ -118,9 +119,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                 logger.info(sub[:6])
                 # Make the ISC output a volume
                 isc_vol = np.zeros(brain_nii.shape)
-
-                if isinstance(isc_imgs, list) is False:
-                    isc_imgs = [isc_imgs]
+                # iterate through segments
                 for idx, isc_seg in enumerate(isc_imgs):
                     # Map the ISC data for each participant into 3d space
                     isc_vol[coords] = isc_seg[n, :]
