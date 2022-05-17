@@ -9,7 +9,8 @@ import numpy as np
 from brainiak.isc import isc, isfc
 from brainiak import image, io
 import nibabel as nib
-from nilearn.inpout_data import NiftiLabelsMasker
+from nilearn.maskers import NiftiLabelsMasker
+from nilearn.image import concat_imgs, index_img
 
 subjects = ['sub-01', 'sub-02', 'sub-03',
             'sub-04', 'sub-05', 'sub-06']
@@ -23,7 +24,7 @@ subjects = ['sub-01', 'sub-02', 'sub-03',
 @click.option('--pairwise', type=bool)
 @click.option('--drop', type=str)
 def map_isc(postproc_path, isc_map_path, kind='temporal',
-            pairwise=None, roi=False, drop=None):
+            pairwise=False, roi=False, drop=None, slice=False):
     """
     Compute ISC for brain data.
 
@@ -95,20 +96,59 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             logger.info(f"{kind} ISC with Leave-One-Out approach")
         #
         if kind == 'temporal':
-            isc_imgs = isc(bold_imgs, pairwise=pairwise)
+            if slice is False:
+                isc_imgs = isc(bold_imgs, pairwise=pairwise)
+            else:
+                isc_imgs = []
+                lng = 40
+                for idx in range(len(bold_imgs)-lng):
+                    slx = slice(0 + idx, lng + idx, 5)
+                    isc_seg = isc(index_img(bold_imgs, slx), pairwise=pairwise)
+                    isc_imgs.append(isc_seg)
         elif kind == 'spatial':
             isc_imgs = isfc(bold_imgs, pairwise=pairwise)
         else:
             logger.info(f"Cannot compute {kind} ISC on {task}")
             continue
         logger.info("Saving images")
-        if pairwise is None:
+        if pairwise is False:
             # save ISC maps per subject
             for n, fn in enumerate(files):
                 _, sub = os.path.split(fn)
                 logger.info(sub[:6])
                 # Make the ISC output a volume
                 isc_vol = np.zeros(brain_nii.shape)
+
+                if isinstance(isc_imgs, list) is False:
+                    isc_imgs = [isc_imgs]
+                for idx, isc_seg in enumerate(isc_imgs):
+                    # Map the ISC data for each participant into 3d space
+                    isc_vol[coords] = isc_seg[n, :]
+                    # make a nii image of the isc map
+                    isc_nifti = nib.Nifti1Image(
+                        isc_vol, brain_nii.affine, brain_nii.header
+                    )
+                    # Save the ISC data as a volume
+                    if roi is True:
+                        try:
+                            nib.save(isc_nifti, f'{isc_map_path}/{task}/'
+                                                f'{sub}_{task}seg{idx:02d}'
+                                                f'_ROI{kind}ISC.nii.gz')
+                        except FileNotFoundError:
+                            os.mkdir(f"{isc_map_path}/{task}")
+                            nib.save(isc_nifti, f'{isc_map_path}/{task}/'
+                                                f'{sub}_{task}seg{idx:02d}'
+                                                f'_ROI{kind}ISC.nii.gz')
+                    else:
+                        try:
+                            nib.save(isc_nifti, f'{isc_map_path}/{task}/'
+                                                f'{sub}_{task}seg{idx:02d}'
+                                                f'_{kind}ISC.nii.gz')
+                        except FileNotFoundError:
+                            os.mkdir(f"{isc_map_path}/{task}")
+                            nib.save(isc_nifti, f'{isc_map_path}/{task}/'
+                                                f'{sub}_{task}seg{idx:02d}'
+                                                f'_{kind}ISC.nii.gz')
                 # Map the ISC data for the first participant into brain space
                 isc_vol[coords] = isc_imgs[n, :]
                 # make a nii image of the isc map
