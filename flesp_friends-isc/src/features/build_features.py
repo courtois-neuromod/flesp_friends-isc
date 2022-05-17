@@ -75,7 +75,6 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         # here we render in voxel space
         # Option to segment run in smaller windows
         elif slices is True:
-
             masked_imgs
             sub_sliced = {}
             # Fetch images
@@ -90,12 +89,12 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                     sliced = nib.Nifti1Image(timeserie[:, :, :, slx])
                     imgs_sub.append(sliced)
                 sub_sliced[i] = imgs_sub
-            # start by first segment in each subject and iterate 
+            # start by first segment in each subject and iterate
             for segment in range(len(sub_sliced[0]):
                 ls_imgs = []
                 # assemble a temporary list for each segment containing all subs
                 for sub in sub_sliced:
-                    ls_imgs.append(sub_sliced[sub])
+                    ls_imgs.append(sub_sliced[sub][segment])
                 # Mask every subject's segment and append in list
                 masked_imgs.append(image.mask_images(ls_imgs, brain_mask))
 
