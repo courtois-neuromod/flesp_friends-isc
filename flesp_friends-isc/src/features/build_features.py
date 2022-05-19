@@ -152,7 +152,6 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                 isc_vol = np.zeros(brain_nii.shape)
                 # iterate through segments
                 for idx, isc_seg in enumerate(isc_imgs):
-                    logger.info(idx)
                     # Map the ISC data for each participant into 3d space
                     isc_vol[coords] = isc_seg[n, :]
                     # make a nii image of the isc map
