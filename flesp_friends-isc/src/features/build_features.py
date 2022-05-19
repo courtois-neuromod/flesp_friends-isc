@@ -181,7 +181,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                                                 f'{sub[:6]}_{task}seg{idx:02d}'
                                                 f'_{kind}ISC.nii.gz')
             # free up memory
-            del masked_imgs, isc_imgs
+            del masked_imgs, isc_imgs, sub_sliced
         else:
             c = 0
             for n, fn in enumerate(files):
