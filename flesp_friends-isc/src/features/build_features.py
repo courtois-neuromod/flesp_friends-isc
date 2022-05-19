@@ -84,9 +84,8 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                 lng = 100
                 imgs_sub = []
                 # slice them subject-wise
-                for idx in range(0, len(timeserie)-lng, 50):
+                for idx in range(0, timeserie.shape[3]-lng, 50):
                     slx = slice(0 + idx, lng + idx)
-                    logger.info(timeserie[:, :, :, slx].shape)
                     sliced = nib.Nifti1Image(timeserie[:, :, :, slx],
                                              brain_nii.affine)
                     imgs_sub.append(sliced)
@@ -94,7 +93,7 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
             # start by first segment in each subject and iterate
             for segment in range(len(sub_sliced[0])):
                 ls_imgs = []
-                # assemble a temporary list for each segment containing all subs
+                # assemble a temporary list for each segment containing all sub
                 for sub in sub_sliced:
                     ls_imgs.append(sub_sliced[sub][segment])
                 # Mask every subject's segment and append in list
@@ -163,22 +162,22 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                     if roi is True:
                         try:
                             nib.save(isc_nifti, f'{isc_map_path}/{task}/'
-                                                f'{sub}_{task}seg{idx:02d}'
+                                                f'{sub[:6]}_{task}seg{idx:02d}'
                                                 f'_ROI{kind}ISC.nii.gz')
                         except FileNotFoundError:
                             os.mkdir(f"{isc_map_path}/{task}")
                             nib.save(isc_nifti, f'{isc_map_path}/{task}/'
-                                                f'{sub}_{task}seg{idx:02d}'
+                                                f'{sub[:6]}_{task}seg{idx:02d}'
                                                 f'_ROI{kind}ISC.nii.gz')
                     else:
                         try:
                             nib.save(isc_nifti, f'{isc_map_path}/{task}/'
-                                                f'{sub}_{task}seg{idx:02d}'
+                                                f'{sub[:6]}_{task}seg{idx:02d}'
                                                 f'_{kind}ISC.nii.gz')
                         except FileNotFoundError:
                             os.mkdir(f"{isc_map_path}/{task}")
                             nib.save(isc_nifti, f'{isc_map_path}/{task}/'
-                                                f'{sub}_{task}seg{idx:02d}'
+                                                f'{sub[:6]}_{task}seg{idx:02d}'
                                                 f'_{kind}ISC.nii.gz')
             # free up memory
             del masked_imgs, isc_imgs
