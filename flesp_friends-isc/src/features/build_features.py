@@ -77,11 +77,12 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
         elif slices is True:
             masked_imgs = []
             sub_sliced = {}
+            lng = 100
+            logger.info(f"Segmenting in slices of length {lng} TRs")
             # Fetch images
             for i, fn in enumerate(files):
                 img = nib.load(fn)
                 timeserie = img.get_fdata()
-                lng = 100
                 imgs_sub = []
                 # slice them subject-wise
                 for idx in range(0, timeserie.shape[3]-lng, 50):
@@ -110,12 +111,12 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                     masked_imgs, len(files))
                 # replace nans
                 bold_imgs[np.isnan(bold_imgs)] = 0
+                logger.info(
+                    f"Correctly imported masked images for {len(files)} subjs"
+                    "\n------------------------------------------------------")
             except ValueError:
                 logger.info(f"Can't perform MaskedMultiSubjectData on {task}")
                 continue
-        logger.info(f"Correctly imported masked images for {len(files)} subjs"
-                    "\n------------------------------------------------------")
-
         # Computing ISC
         logger.info("\n"
                     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
