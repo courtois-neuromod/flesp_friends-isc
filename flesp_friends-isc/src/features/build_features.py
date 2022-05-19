@@ -82,10 +82,11 @@ def map_isc(postproc_path, isc_map_path, kind='temporal',
                 img = nib.load(fn)
                 timeserie = img.get_fdata()
                 lng = 100
-                imgs_sub=[]
+                imgs_sub = []
                 # slice them subject-wise
                 for idx in range(0, len(timeserie)-lng, 50):
                     slx = slice(0 + idx, lng + idx)
+                    logger.info(timeserie[:, :, :, slx].shape)
                     sliced = nib.Nifti1Image(timeserie[:, :, :, slx],
                                              brain_nii.affine)
                     imgs_sub.append(sliced)
