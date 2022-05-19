@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --account=rrg-pbellec
-#SBATCH --job-name=postproc
-#SBATCH --output=./isc_maps_10.out
-#SBATCH --error=./isc_maps_10.err
+#SBATCH --job-name=Sliced_ISC
+#SBATCH --output=./isc_maps_sliced_10.out
+#SBATCH --error=./isc_maps_sliced_10.err
 #SBATCH --time=10:00:00
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=32G
@@ -11,4 +11,4 @@
 
 workon flesp_friends-isc
 cd flesp_friends-isc
-make features USER_OPTIONS="--roi False --kind temporal --pairwise True"
+make features USER_OPTIONS="--roi False --kind temporal --pairwise False --slices True"
