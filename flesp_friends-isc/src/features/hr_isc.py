@@ -69,19 +69,18 @@ def hr_isc(postproc_path, isc_hr_path, tasks=ok_task, length=99):
 
     # iterate through tasks
     for task in hr_intervals_tr_aligned.keys():
-        hr_of_task_n = hr_intervals_tr_aligned[task]
 
         # Segment the run
-        for i, window in range(0, len(hr_of_task_n), 50):
+        for i, window in range(0, len(hr_intervals_trs_aligned[task]), 50):
             # 100 TR long window, overlap
             segment = hr_intervals_tr_aligned[task].loc[window : window + length]
 
-            if len(segment.dropna(axis=1)) < 50:
+            if len(segment.dropna(axis=1)) < length / 2:
                 continue
             # computing HR-ISC
             hr_isc_r_values = isc(segment.values, pairwise=False)
 
-            coeffs[f"{hr_of_task_n}seg{i:02d}"] = hr_isc_r_values.flatten()
+            coeffs[f"{task}seg{i:02d}"] = hr_isc_r_values.flatten()
 
     coeffs.to_csv(f"{isc_hr_path}/hr_isc_segments{length}tr.csv")
 

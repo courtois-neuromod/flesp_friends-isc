@@ -21,6 +21,62 @@ brain_nii = nib.load(mask_name)
 coords = np.where(brain_mask)
 
 
+def _save_pair_feature_img(isc_map_path, task, kind, files):
+    """
+    """
+    logger = logging.getLogger(__name__)
+    # save ISC maps per pairs of subject
+    counter = 0
+    for n, fn in enumerate(files):
+        _, sub_a = os.path.split(fn)
+        for m in range(n + 1, len(files)):
+            _, sub_b = os.path.split(files[m])
+            logger.info(f"{sub_a[:6]} | {sub_b[:6]}")
+            pair = f"{sub_a[:6]}" + f"-{sub_b[:6]}"
+            # Make the ISC output a volume
+            isc_vol = np.zeros(brain_nii.shape)
+            # Map the ISC data for the first participant into brain space
+            isc_vol[coords] = isc_imgs[counter, :]
+            # make a nii image of the isc map
+            isc_nifti = nib.Nifti1Image(isc_vol, brain_nii.affine, brain_nii.header)
+            if not os.path.exists(f"{isc_map_path}/{task}"):
+                os.mkdir(f"{isc_map_path}/{task}")
+
+            nib.save(
+                isc_nifti, f"{isc_map_path}/{task}/{pair}_{task}_{kind}ISC.nii.gz",
+            )
+            counter += 1
+
+
+def _save_sub_feature_img(isc_map_path, task, kind, files, roi):
+    """
+    """
+    logger = logging.getLogger(__name__)
+    # save ISC maps per subject
+    for n, fn in enumerate(files):
+        _, sub = os.path.split(fn)
+        logger.info(sub[:6])
+        # Make the ISC output a volume
+        isc_vol = np.zeros(brain_nii.shape)
+        # iterate through segments
+        for idx, isc_seg in enumerate(isc_imgs):
+            # Map the ISC data for each participant into 3d space
+            isc_vol[coords] = isc_seg[n, :]
+            # make a nii image of the isc map
+            isc_nifti = nib.Nifti1Image(isc_vol, brain_nii.affine, brain_nii.header)
+            # Save the ISC data as a volume
+            if not os.path.exists(f"{isc_map_path}/{task}"):
+                os.mkdir(f"{isc_map_path}/{task}")
+
+            if roi is True:
+                fn = f"{sub[:6]}_{task}seg{idx:02d}ROI{kind}ISC.nii.gz"
+                nib.save(isc_nifti, f"{isc_map_path}/{task}/{fn}")
+            else:
+                fn = f"{sub[:6]}_{task}seg{idx:02d}_{kind}ISC.nii.gz"
+
+                nib.save(isc_nifti, f"{isc_map_path}/{task}/{fn}")
+
+
 def _slice_img_timeseries(files, affine=brain_nii.affine):
     """
     Slice 4D timeseries.
@@ -169,61 +225,13 @@ def map_isc(
         logger.info("Saving images")
 
         if pairwise is False:
-            # save ISC maps per subject
-            for n, fn in enumerate(files):
-                _, sub = os.path.split(fn)
-                logger.info(sub[:6])
-                # Make the ISC output a volume
-                isc_vol = np.zeros(brain_nii.shape)
-                # iterate through segments
-                for idx, isc_seg in enumerate(isc_imgs):
-                    # Map the ISC data for each participant into 3d space
-                    isc_vol[coords] = isc_seg[n, :]
-                    # make a nii image of the isc map
-                    isc_nifti = nib.Nifti1Image(
-                        isc_vol, brain_nii.affine, brain_nii.header
-                    )
-                    # Save the ISC data as a volume
-                    if not os.path.exists(f"{isc_map_path}/{task}"):
-                        os.mkdir(f"{isc_map_path}/{task}")
-
-                    if roi is True:
-                        fn = f"{sub[:6]}_{task}seg{idx:02d}ROI{kind}ISC.nii.gz"
-                        nib.save(isc_nifti, f"{isc_map_path}/{task}/{fn}")
-                    else:
-                        fn = f"{sub[:6]}_{task}seg{idx:02d}_{kind}ISC.nii.gz"
-
-                        nib.save(isc_nifti, f"{isc_map_path}/{task}/{fn}")
+            _save_sub_feature_img(isc_map_path, task, kind, files, roi)
             # free up memory
             del masked_imgs, isc_imgs
 
         # if it's not pairwise
         else:
-            # save ISC maps per pairs of subject
-            counter = 0
-            for n, fn in enumerate(files):
-                _, sub_a = os.path.split(fn)
-                for m in range(n + 1, len(files)):
-                    _, sub_b = os.path.split(files[m])
-                    logger.info(f"{sub_a[:6]} | {sub_b[:6]}")
-                    pair = f"{sub_a[:6]}" + f"-{sub_b[:6]}"
-                    # Make the ISC output a volume
-                    isc_vol = np.zeros(brain_nii.shape)
-                    # Map the ISC data for the first participant into brain space
-                    isc_vol[coords] = isc_imgs[counter, :]
-                    # make a nii image of the isc map
-                    isc_nifti = nib.Nifti1Image(
-                        isc_vol, brain_nii.affine, brain_nii.header
-                    )
-                    if not os.path.exists(f"{isc_map_path}/{task}"):
-                        os.mkdir(f"{isc_map_path}/{task}")
-
-                    nib.save(
-                        isc_nifti,
-                        f"{isc_map_path}/{task}/{pair}" f"_{task}_{kind}ISC.nii.gz",
-                    )
-                    counter += 1
-
+            _save_pair_feature_img(isc_map_path, task, kind, files)
             # free up memory
             del bold_imgs, isc_imgs
         logger.info(

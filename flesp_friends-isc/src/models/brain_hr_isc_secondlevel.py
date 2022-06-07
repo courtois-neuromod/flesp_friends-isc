@@ -1,16 +1,15 @@
 """Brain-HR-ISC workflow."""
+import os
 import logging
-import fnmatch
-import pickle
-import click
-import itertools
-from dotenv import find_dotenv, load_dotenv
 import glob
+import click
+from dotenv import find_dotenv, load_dotenv
 import pandas as pd
+import numpy as np
+import nibabel as nib
 
 # niimg
 from nilearn.glm.second_level import SecondLevelModel, make_second_level_design_matrix
-import neurokit2 as nk
 
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
 
@@ -18,10 +17,14 @@ hr_coeffs = pd.read_csv("data/isc_hr_coeffs-seg.csv", index_col=0)
 
 dirs = glob.glob("data/iscs/*")
 
+mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
+brain_nii = nib.load(mask_name)
+brain_mask = io.load_boolean_mask(mask_name)
+coords = np.where(brain_mask)
+
 
 def create_model_input(isc_path,):
-    """
-    """
+    """Build data dictionaries."""
     logger = logging.getLogger(__name__)
 
     brain_isc_dict = {}
@@ -37,11 +40,11 @@ def create_model_input(isc_path,):
 
             task_name = os.path.split(dir)[1]
             scan_segments_list = sorted(glob.glob(f"{isc_path}/{task_name}/{sub}*"))
-
+            # Make sure subject has proper files
             if scan_segments_list == []:
                 logger.info(f"no file for {sub} in {task_name}")
                 continue
-
+            # Make sure the scan has concurrent HR data
             for idx in range(len(scan_segments_list)):
                 if f"{task_name}seg{idx:02d}" in sub_hr_coeffs.columns:
                     hr_brain_segment_list.append(f"{task_name}seg{idx:02d}")
@@ -76,9 +79,7 @@ def create_model_input(isc_path,):
 @click.command()
 @click.argument("isc_path", type=click.Path(exists=True))
 def compute_model_contrast(isc_path,):
-    """
-    """
-    logger = logging.getLogger(__name__)
+    """Compute and save HR-ISC regressed Brain-ISC maps"""
 
     brain_isc_dict, hr_isc_dict = create_model_input(isc_path)
 
@@ -89,4 +90,25 @@ def compute_model_contrast(isc_path,):
         model = SecondLevelModel(smoothing_fwhm=6).fit(
             brain_isc_dict[sub], design_matrix
         )
-        z_score_map = model.compute_contrast('r_coeffs', output_type='z_score')
+        z_score_map = model.compute_contrast("r_coeffs", output_type="z_score")
+
+        # Make the ISC output a volume
+        isc_vol = np.zeros(brain_nii.shape)
+        isc_vol[coords] = z_score_map
+        isc_nifti = nib.Nifti1Image(isc_vol, brain_nii.affine, brain_nii.header)
+        fn = f"{sub}_HR-Brain-ISC.nii.gz"
+        nib.save(isc_nifti, f"{isc_path}/{fn}")
+
+
+if __name__ == "__main__":
+    # NOTE: from command line `make_dataset input_data output_filepath`
+    log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    logging.basicConfig(level=logging.INFO, format=log_fmt)
+
+    # not used in this stub but often useful for finding various files
+    # project_dir = Path(__file__).resolve().parents[2]
+
+    # find .env automagically by walking up directories until it's found, then
+    # load up the .env entries as environment variables
+    load_dotenv(find_dotenv())
+    compute_model_contrast(isc_path)
