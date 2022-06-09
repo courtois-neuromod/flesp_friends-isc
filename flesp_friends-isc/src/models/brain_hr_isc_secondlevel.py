@@ -7,13 +7,14 @@ from dotenv import find_dotenv, load_dotenv
 import pandas as pd
 import numpy as np
 import nibabel as nib
+from brainiak import io
 
 # niimg
 from nilearn.glm.second_level import SecondLevelModel, make_second_level_design_matrix
 
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
 
-hr_coeffs = pd.read_csv("scratch/flesp/data/hr_isc_coeffs_segments100TR.csv", index_col=0)
+hr_coeffs = pd.read_csv("/scratch/flesp/data/hr_isc_coeffs_segments100TR.csv", index_col=0)
 
 dirs = glob.glob("/scratch/flesp/data/isc-segment/*")
 
@@ -31,7 +32,7 @@ def create_model_input(isc_path,):
     hr_isc_dict = {}
     for sub in subjects:
         logger.info(f"Creating model input for {sub}")
-        sub_hr_coeffs = hr_coeffs.iloc[subjects.index(sub)]
+        sub_hr_coeffs = hr_coeffs.iloc[subjects.index(sub)].to_frame().T
         hr_brain_segment_list = []
         segments_to_remove = []
         second_level_input = []
