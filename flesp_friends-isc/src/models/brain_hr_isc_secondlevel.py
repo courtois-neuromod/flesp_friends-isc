@@ -6,20 +6,24 @@ import click
 from dotenv import find_dotenv, load_dotenv
 import pandas as pd
 import numpy as np
-import nibabel as nib
-from brainiak import io
-from nilearn.image import threshold_stats_img
-from nilearn import plotting
 
 # niimg
 from nilearn.glm.second_level import SecondLevelModel, make_second_level_design_matrix
+import nibabel as nib
+from brainiak import io
+from nilearn.glm import threshold_stats_img
+from nilearn import plotting
+from nilearn.datasets import fetch_surf_fsaverage
 
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
 
-hr_coeffs = pd.read_csv("/scratch/flesp/data/hr_isc_coeffs_segments100TR.csv", index_col=0)
+hr_coeffs = pd.read_csv(
+    "/scratch/flesp/data/hr_isc_coeffs_segments100TR.csv", index_col=0
+)
 
 dirs = glob.glob("/scratch/flesp/data/isc-segment/*")
 
+fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_nii = nib.load(mask_name)
 brain_mask = io.load_boolean_mask(mask_name)
@@ -66,9 +70,9 @@ def create_model_input(isc_path,):
         hr_isc_dict[sub] = pd.DataFrame(
             {
                 "subject_label": sorted(hr_brain_segment_list),
-                "r_coeffs": sub_hr_coeffs.drop(
-                    columns=segments_to_remove
-                ).iloc[0].squeeze(),
+                "r_coeffs": sub_hr_coeffs.drop(columns=segments_to_remove)
+                .iloc[0]
+                .squeeze(),
             }
         )
 
@@ -100,17 +104,20 @@ def compute_model_contrast(isc_path,):
         logger.info(f"Computed model contrast for {sub}")
 
         # Make the ISC output a volume
-        threshold = threshold_stats_img(
-            p_val,
-            alpha=.05,
-            height_control='fpr',
+        thresholded_map, threshold = threshold_stats_img(
+            z_score_map,
+            alpha=0.05,
+            height_control="fpr",
             cluster_threshold=10,
             two_sided=True,
         )
-        view = plotting.view_img_on_surf(img, threshold=, surf_mesh='fsaverage')
+        view = plotting.view_img_on_surf(
+            thresholded_map, threshold=threshold, surf_mesh="fsaverage"
+        )
         view.save_as_html(f"{sub}_HR-Brain-ISC_surface_plot.html")
         logger.info(f"Saved stat map for {sub}")
     logger.info(f"Done workflow \n _______________________")
+
 
 if __name__ == "__main__":
     # NOTE: from command line `make_dataset input_data output_filepath`

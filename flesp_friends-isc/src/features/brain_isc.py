@@ -93,7 +93,7 @@ def _slice_img_timeseries(files, affine=brain_nii.affine):
         timeserie = img.get_fdata()
         imgs_sub = []
         # slice them subject-wise
-        for idx in range(0, timeserie.shape[3] - lng, 50):
+        for idx in range(0, timeserie.shape[3] - lng, lng/2):
             slx = slice(0 + idx, lng + idx)
             sliced = nib.Nifti1Image(timeserie[:, :, :, slx], affine)
             imgs_sub.append(sliced)
