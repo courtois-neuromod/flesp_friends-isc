@@ -25,6 +25,7 @@ for task in sorted(episodes):
 @click.command()
 @click.argument("data_dir", type=click.Path(exists=True))
 @click.option("--kind", type=str)
+@click.option("--slices", type=bool)
 def surface_isc_plots(
     data_dir,
     subjects=subjects,
@@ -34,6 +35,7 @@ def surface_isc_plots(
     hemi="left",
     threshold=0.2,
     vmax=1.0,
+    slices=False
 ):
     """
     Plot surface subject-wise.
@@ -52,61 +54,66 @@ def surface_isc_plots(
     logger = logging.getLogger(__name__)
     for subject in subjects:
         for view, task in itertools.product(views, tasks):
+            isc_volumes = []
             logger.info(f"{subject} | {task} | {view}")
             isc_files = sorted(glob.glob(f"{data_dir}/{task}/{subject}*.nii.gz"))
             isc_files = fnmatch.filter(isc_files, f"*{kind}*")
             try:
-                average_isc = image.mean_img(isc_files)
+                if slices is True:
+                    for fn in isc_files:
+                        isc_volumes.append(image.mean_img(fn))
+                else:
+                    isc_volumes = [image.mean_img(isc_files)]
             except StopIteration:
-                logger.info(f"No ISC map for this episode segment")
-                plt.close("all")
+                logger.info("No ISC map for this episode segment")
                 continue
             logger.info("Averaged BOLD images")
             # plot left hemisphere
-            texture = surface.vol_to_surf(average_isc, fsaverage.pial_left)
-            plotting.plot_surf_stat_map(
-                fsaverage.pial_left,
-                texture,
-                hemi=hemi,
-                colorbar=True,
-                threshold=threshold,
-                vmax=vmax,
-                bg_map=fsaverage.sulc_left,
-                view=view,
-                title=f"{subject} {task}",
-            )
-            fn = str(
-                f"/scratch/flesp/figures/{task}/"
-                f"left_{view}_surfplot_{kind}ISC_on_{task}_{subject}.png"
-            )
-            if os.path.exists(fn):
-                os.remove(fn)
-            try:
-                plt.savefig(fn, bbox_inches="tight")
-            except FileNotFoundError:
-                logger.info(f"Creating path for {task}")
-                os.mkdir(f"/scratch/flesp/figures/{task}/")
-                plt.savefig(fn, bbox_inches="tight")
-            # plot right hemisphere
-            texture = surface.vol_to_surf(average_isc, fsaverage.pial_right)
-            plotting.plot_surf_stat_map(
-                fsaverage.pial_right,
-                texture,
-                hemi=hemi,
-                colorbar=True,
-                threshold=threshold,
-                vmax=vmax,
-                bg_map=fsaverage.sulc_right,
-                view=view,
-                title=f"{subject} {task}",
-            )
-            plt.savefig(
-                f"/scratch/flesp/figures/{task}/"
-                f"right_{view}_surfplot_{kind}"
-                f"ISC_on_{task}_{subject}.png",
-                bbox_inches="tight",
-            )
-            plt.close("all")
+            for average_isc in isc_volumes:
+                texture = surface.vol_to_surf(average_isc, fsaverage.pial_left)
+                plotting.plot_surf_stat_map(
+                    fsaverage.pial_left,
+                    texture,
+                    hemi=hemi,
+                    colorbar=True,
+                    threshold=threshold,
+                    vmax=vmax,
+                    bg_map=fsaverage.sulc_left,
+                    view=view,
+                    title=f"{subject} {task}",
+                )
+                fn = str(
+                    f"/scratch/flesp/figures/{task}/"
+                    f"left_{view}_surfplot_{kind}ISC_on_{task}_{subject}.png"
+                )
+                if os.path.exists(fn):
+                    os.remove(fn)
+                try:
+                    plt.savefig(fn, bbox_inches="tight")
+                except FileNotFoundError:
+                    logger.info(f"Creating path for {task}")
+                    os.mkdir(f"/scratch/flesp/figures/{task}/")
+                    plt.savefig(fn, bbox_inches="tight")
+                # plot right hemisphere
+                texture = surface.vol_to_surf(average_isc, fsaverage.pial_right)
+                plotting.plot_surf_stat_map(
+                    fsaverage.pial_right,
+                    texture,
+                    hemi=hemi,
+                    colorbar=True,
+                    threshold=threshold,
+                    vmax=vmax,
+                    bg_map=fsaverage.sulc_right,
+                    view=view,
+                    title=f"{subject} {task}",
+                )
+                plt.savefig(
+                    f"/scratch/flesp/figures/{task}/"
+                    f"right_{view}_surfplot_{kind}"
+                    f"ISC_on_{task}_{subject}.png",
+                    bbox_inches="tight",
+                )
+                plt.close("all")
 
 
 @click.command()
