@@ -8,6 +8,8 @@ import pandas as pd
 import numpy as np
 import nibabel as nib
 from brainiak import io
+from nilearn.image import threshold_stats_img
+from nilearn import plotting
 
 # niimg
 from nilearn.glm.second_level import SecondLevelModel, make_second_level_design_matrix
@@ -57,14 +59,16 @@ def create_model_input(isc_path,):
                             f"temporalISC.nii.gz"
                         )[0]
                     )
-            for segment in sub_hr_coeffs.columns:
-                if segment not in hr_brain_segment_list:
-                    segments_to_remove.append(segment)
+        for segment in sub_hr_coeffs.columns:
+            if segment not in hr_brain_segment_list:
+                segments_to_remove.append(segment)
         brain_isc_dict[sub] = sorted(second_level_input)
         hr_isc_dict[sub] = pd.DataFrame(
             {
                 "subject_label": sorted(hr_brain_segment_list),
-                "r_coeffs": sub_hr_coeffs.drop(columns=segments_to_remove),
+                "r_coeffs": sub_hr_coeffs.drop(
+                    columns=segments_to_remove
+                ).iloc[0].squeeze(),
             }
         )
 
@@ -90,17 +94,21 @@ def compute_model_contrast(isc_path,):
             hr_isc_dict[sub]["subject_label"], hr_isc_dict[sub]
         )
         model = SecondLevelModel(smoothing_fwhm=6).fit(
-            brain_isc_dict[sub], design_matrix
+            brain_isc_dict[sub], design_matrix=design_matrix
         )
         z_score_map = model.compute_contrast("r_coeffs", output_type="z_score")
         logger.info(f"Computed model contrast for {sub}")
 
         # Make the ISC output a volume
-        isc_vol = np.zeros(brain_nii.shape)
-        isc_vol[coords] = z_score_map
-        isc_nifti = nib.Nifti1Image(isc_vol, brain_nii.affine, brain_nii.header)
-        fn = f"{sub}_HR-Brain-ISC.nii.gz"
-        nib.save(isc_nifti, f"{isc_path}/{fn}")
+        threshold = threshold_stats_img(
+            p_val,
+            alpha=.05,
+            height_control='fpr',
+            cluster_threshold=10,
+            two_sided=True,
+        )
+        view = plotting.view_img_on_surf(img, threshold=, surf_mesh='fsaverage')
+        view.save_as_html(f"{sub}_HR-Brain-ISC_surface_plot.html")
         logger.info(f"Saved stat map for {sub}")
     logger.info(f"Done workflow \n _______________________")
 
