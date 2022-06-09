@@ -80,8 +80,9 @@ def create_model_input(isc_path,):
 @click.argument("isc_path", type=click.Path(exists=True))
 def compute_model_contrast(isc_path,):
     """Compute and save HR-ISC regressed Brain-ISC maps"""
-
+    logger = logging.getLogger(__name__)
     brain_isc_dict, hr_isc_dict = create_model_input(isc_path)
+    logger.info("Created data dictionaries")
 
     for sub in subjects:
         design_matrix = make_second_level_design_matrix(
@@ -91,6 +92,7 @@ def compute_model_contrast(isc_path,):
             brain_isc_dict[sub], design_matrix
         )
         z_score_map = model.compute_contrast("r_coeffs", output_type="z_score")
+        logger.info(f"Computed model contrast for {sub}")
 
         # Make the ISC output a volume
         isc_vol = np.zeros(brain_nii.shape)
@@ -98,7 +100,8 @@ def compute_model_contrast(isc_path,):
         isc_nifti = nib.Nifti1Image(isc_vol, brain_nii.affine, brain_nii.header)
         fn = f"{sub}_HR-Brain-ISC.nii.gz"
         nib.save(isc_nifti, f"{isc_path}/{fn}")
-
+        logger.info(f"Saved stat map for {sub}")
+    logger.info(f"Done workflow \n _______________________")
 
 if __name__ == "__main__":
     # NOTE: from command line `make_dataset input_data output_filepath`
