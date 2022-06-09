@@ -34,6 +34,9 @@ features:
 ## Make figures
 figures:
 	$(PYTHON_INTERPRETER) src/visualization/visualize.py /scratch/flesp/data/iscs $(USER_OPTIONS)
+## Make figures
+model:
+		$(PYTHON_INTERPRETER) src/model/brain_hr_isc_secondlevel.py /scratch/flesp/data/isc-segments
 ## Delete all compiled Python files
 clean:
 	find . -type f -name "*.py[co]" -delete
