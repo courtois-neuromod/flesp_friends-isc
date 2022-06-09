@@ -13,9 +13,9 @@ from nilearn.glm.second_level import SecondLevelModel, make_second_level_design_
 
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
 
-hr_coeffs = pd.read_csv("data/isc_hr_coeffs-seg.csv", index_col=0)
+hr_coeffs = pd.read_csv("scratch/flesp/data/hr_isc_coeffs_segments100TR.csv", index_col=0)
 
-dirs = glob.glob("data/iscs/*")
+dirs = glob.glob("/scratch/flesp/data/isc-segment/*")
 
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_nii = nib.load(mask_name)
