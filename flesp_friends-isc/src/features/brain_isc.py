@@ -21,7 +21,7 @@ brain_nii = nib.load(mask_name)
 coords = np.where(brain_mask)
 
 
-def _save_pair_feature_img(isc_map_path, task, kind, files):
+def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files):
     """
     """
     logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ def _save_pair_feature_img(isc_map_path, task, kind, files):
             counter += 1
 
 
-def _save_sub_feature_img(isc_map_path, task, kind, files, roi):
+def _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
     """
     """
     logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ def _save_sub_feature_img(isc_map_path, task, kind, files, roi):
                 nib.save(isc_nifti, f"{isc_map_path}/{task}/{fn}")
 
 
-def _slice_img_timeseries(files, affine=brain_nii.affine):
+def _slice_img_timeseries(files, lng, affine=brain_nii.affine):
     """
     Slice 4D timeseries.
 
@@ -85,7 +85,6 @@ def _slice_img_timeseries(files, affine=brain_nii.affine):
     """
     masked_imgs = []
     sub_sliced = {}
-    lng = 100
 
     # Fetch images
     for i, processed in enumerate(files):
@@ -119,6 +118,7 @@ def _slice_img_timeseries(files, affine=brain_nii.affine):
 @click.option("--pairwise", type=bool)
 @click.option("--drop", type=str)
 @click.option("--slices", type=bool)
+@click.option("--lng", type=int)
 def map_isc(
     postproc_path,
     isc_map_path,
@@ -127,6 +127,7 @@ def map_isc(
     roi=False,
     drop=None,
     slices=False,
+    lng=100,
 ):
     """
     Compute ISC for brain data.
@@ -173,7 +174,7 @@ def map_isc(
         # Option to segment run in smaller windows
         if slices is True:
             logger.info(f"Segmenting in slices of length {lng} TRs")
-            masked_imgs = _slice_img_timeseries(files)
+            masked_imgs = _slice_img_timeseries(files, lng)
 
         # mask the whole run
         else:

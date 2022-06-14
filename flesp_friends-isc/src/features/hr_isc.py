@@ -54,7 +54,7 @@ def _resampling_rr_to_tr(postproc_path, tasks=ok_task):
 @click.argument("postproc_path", type=click.Path(exists=True))
 @click.argument("isc_hr_path", type=click.Path(exists=True))
 @click.option("--length", type=int)
-def hr_isc(postproc_path, isc_hr_path, tasks=ok_task, length=99):
+def hr_isc(postproc_path, isc_hr_path, tasks=ok_task, length=30):
     """
     """
     logger = logging.getLogger(__name__)
@@ -71,11 +71,11 @@ def hr_isc(postproc_path, isc_hr_path, tasks=ok_task, length=99):
     for task in hr_intervals_tr_aligned.keys():
 
         # Segment the run
-        for i, window in range(0, len(hr_intervals_trs_aligned[task]), 50):
+        for i, window in range(0, len(hr_intervals_tr_aligned[task]), length):
             # 100 TR long window, overlap
-            segment = hr_intervals_tr_aligned[task].loc[window : window + length]
+            segment = hr_intervals_tr_aligned[task].loc[window:window + length]
 
-            if len(segment.dropna(axis=1)) < length / 2:
+            if len(segment) < length / 2:
                 continue
             # computing HR-ISC
             hr_isc_r_values = isc(segment.values, pairwise=False)
