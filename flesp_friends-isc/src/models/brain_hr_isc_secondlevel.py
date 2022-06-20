@@ -18,10 +18,10 @@ from nilearn.datasets import fetch_surf_fsaverage
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
 
 hr_coeffs = pd.read_csv(
-    "/scratch/flesp/data/hr_isc_coeffs_segments100TR.csv", index_col=0
+    "/scratch/flesp/physio_data/isc_hr_coeffs-seg30.csv", index_col=0
 )
 
-dirs = glob.glob("/scratch/flesp/data/isc-segment/*")
+dirs = glob.glob("/scratch/flesp/data/isc-segment30/*")
 
 fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
@@ -97,9 +97,11 @@ def compute_model_contrast(isc_path,):
         design_matrix = make_second_level_design_matrix(
             hr_isc_dict[sub]["subject_label"], hr_isc_dict[sub]
         )
+        logger.info("created design matrix")
         model = SecondLevelModel(smoothing_fwhm=6).fit(
             brain_isc_dict[sub], design_matrix=design_matrix
         )
+        logger.info("fitted model")
         z_score_map = model.compute_contrast("r_coeffs", output_type="z_score")
         logger.info(f"Computed model contrast for {sub}")
 

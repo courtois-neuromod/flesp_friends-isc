@@ -6,7 +6,7 @@ import click
 from dotenv import find_dotenv, load_dotenv
 import glob
 from brainiak.isc import isc
-import neurokit as nk
+import neurokit2 as nk
 import pandas as pd
 
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
@@ -36,7 +36,9 @@ def _resampling_rr_to_tr(postproc_path, tasks=ok_task):
         # go through each subject's physio file
         for sub in subjects:
             fname = fnmatch.filter(task_fnames, f"*{sub}*")
-            with open(fname, "rb") as opener:
+            if fname == []:
+                continue
+            with open(fname[0], "rb") as opener:
                 json_file_with_physio_info = pickle.load(opener)
             rr_intervals = json_file_with_physio_info["PPG_clean_rr_systole"]
             data = pd.Series(
@@ -96,4 +98,4 @@ if __name__ == "__main__":
     # find .env automagically by walking up directories until it's found, then
     # load up the .env entries as environment variables
     load_dotenv(find_dotenv())
-    hr_isc(postproc_path, isc_hr_path)
+    hr_isc()
