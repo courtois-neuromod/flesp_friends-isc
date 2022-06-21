@@ -117,8 +117,8 @@ def compute_model_contrast(
         logger.info("fitted model")
         stat_map = model.compute_contrast("r_coeffs", output_type="all")
         logger.info(f"Computed model contrast for {sub}")
-        max = stat_map["effect_size"].get_fdata().max()
-        eff_size.append(max)
+        max_eff = stat_map["effect_size"].get_fdata().max()
+        eff_size.append(max_eff)
 
         # Make the ISC output a volume
         thresholded_map, threshold = threshold_stats_img(
