@@ -179,7 +179,16 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind="temporal"):
 
 @click.command()
 @click.argument("data_dir", type=click.Path(exists=True))
-def plot_axial_slice(data_dir, tasks=tasks, taskwise=False, kind="temporal"):
+@click.argument("figures_dir", type=click.Path(exists=True))
+@click.option("--kind", type=str)
+@click.option("--slices", type=bool)
+def plot_axial_slice(
+        data_dir,
+        tasks=tasks,
+        taskwise=False,
+        kind="temporal"
+        slices=False,
+        ):
     """
     Plot axial slice.
 
@@ -200,27 +209,33 @@ def plot_axial_slice(data_dir, tasks=tasks, taskwise=False, kind="temporal"):
         logger.info("Taskwise visualization")
         for task in tasks:
             files = glob.glob(f"{data_dir}/{task}/*.nii.gz")
-            average = image.mean_img(files)
+            isc_volumes = []
+            if slices is True:
+                for fn in files:
+                    isc_volumes.append(image.mean_img(fn))
+            else:
+                isc_volumes = [image.mean_img(files)]
             logger.info(f"Plotting {task}")
             # NOTE: threshold may need to be adjusted for each decoding task
-            plotting.plot_stat_map(
-                average,
-                threshold=0.2,
-                vmax=0.75,
-                symmetric_cbar=False,
-                display_mode="z",
-                cut_coords=[-24, -6, 3, 25, 37, 51, 65],
-                title=f"{kind} ISC on {task}",
-            )
-            fn = str(f"/scratch/flesp/figures/{task}/" f"{kind}ISC_on_{task}.png")
-            if os.path.exists(fn):
-                os.remove(fn)
-            try:
-                plt.savefig(fn, bbox_inches="tight")
-            except FileNotFoundError:
-                logger.info(f"Creating path for {task}")
-                os.mkdir(f"/scratch/flesp/figures/{task}/")
-                plt.savefig(fn, bbox_inches="tight")
+            for idx, average in enumerate(isc_volumes):
+                plotting.plot_stat_map(
+                    average,
+                    threshold=0.2,
+                    vmax=0.75,
+                    symmetric_cbar=False,
+                    display_mode="z",
+                    cut_coords=[-24, -6, 3, 25, 37, 51, 65],
+                    title=f"{kind} ISC on {task}",
+                )
+                fn = str(f"{figures_dir}/{task}/{kind}ISC_on_{task}seg{idx:02d}.png")
+                if os.path.exists(fn):
+                    os.remove(fn)
+                try:
+                    plt.savefig(fn, bbox_inches="tight")
+                except FileNotFoundError:
+                    logger.info(f"Creating path for {task}")
+                    os.mkdir(f"{figures_dir}/{task}/")
+                    plt.savefig(fn, bbox_inches="tight")
 
             plt.close("all")
     else:
