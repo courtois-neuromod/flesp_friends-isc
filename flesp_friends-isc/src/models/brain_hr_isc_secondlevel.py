@@ -16,7 +16,6 @@ from nilearn import plotting
 from nilearn.datasets import fetch_surf_fsaverage
 
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
-seg_len = "30"
 hr_coeffs = pd.read_csv(
     f"/scratch/flesp/physio_data/isc_hr_coeffs-seg{seg_len}.csv", index_col=0
 )
@@ -90,9 +89,11 @@ def create_model_input(
 @click.command()
 @click.argument("isc_path", type=click.Path(exists=True))
 @click.argument("out_dir", type=click.Path(exists=True))
+@click.option("--seg_len", type=str)
 def compute_model_contrast(
     isc_path,
     out_dir,
+    seg_len="30",
 ):
     """Compute and save HR-ISC regressed Brain-ISC maps"""
     logger = logging.getLogger(__name__)
@@ -121,7 +122,7 @@ def compute_model_contrast(
 
         # Make the ISC output a volume
         thresholded_map, threshold = threshold_stats_img(
-            z_score_map,
+            stat_map,
             alpha=0.05,
             height_control="fpr",
             cluster_threshold=10,
