@@ -16,12 +16,12 @@ from nilearn import plotting
 from nilearn.datasets import fetch_surf_fsaverage
 
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
-
+seg_len = "30"
 hr_coeffs = pd.read_csv(
-    "/scratch/flesp/physio_data/isc_hr_coeffs-seg30.csv", index_col=0
+    f"/scratch/flesp/physio_data/isc_hr_coeffs-seg{seg_len}.csv", index_col=0
 )
 
-dirs = glob.glob("/scratch/flesp/data/isc-segment30/*")
+dirs = glob.glob(f"/scratch/flesp/data/isc-segments{seg_len}/*")
 
 fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
@@ -89,8 +89,10 @@ def create_model_input(
 
 @click.command()
 @click.argument("isc_path", type=click.Path(exists=True))
+@click.argument("out_dir", type=click.Path(exists=True))
 def compute_model_contrast(
     isc_path,
+    out_dir,
 ):
     """Compute and save HR-ISC regressed Brain-ISC maps"""
     logger = logging.getLogger(__name__)
@@ -104,7 +106,8 @@ def compute_model_contrast(
             hr_isc_dict[sub]["subject_label"], hr_isc_dict[sub]
         )
         plotting.plot_design_matrix(
-            design_matrix, output_file=f"{out_dir}/{sub}_design-matrix.png"
+            design_matrix,
+            output_file=f"{out_dir}/segments{seg_len}TRs/{sub}_design-matrix.png",
         )
         logger.info("created design matrix")
         model = SecondLevelModel(smoothing_fwhm=6).fit(
@@ -128,14 +131,19 @@ def compute_model_contrast(
             thresholded_map, threshold=threshold, surf_mesh="fsaverage"
         )
 
-        nib.save(stat_map["z_score"], f"{out_dir}/{sub}_HR-Brain-ISC_zmap.nii.gz")
+        nib.save(
+            stat_map["z_score"],
+            f"{out_dir}/segments{seg_len}TRs/{sub}_HR-Brain-ISC_zmap.nii.gz",
+        )
 
-        view.save_as_html(f"{out_dir}/{sub}_HR-Brain-ISC_surface_plot.html")
+        view.save_as_html(
+            f"{out_dir}/segments{seg_len}TRs/{sub}_HR-Brain-ISC_surface_plot.html"
+        )
         logger.info(f"Saved stat map for {sub}")
 
     # log effect sizes of models
     max_eff_size["Effect_sizes"] = eff_size
-    max_eff_size.to_csv(f"{out_dir}/max_effect_sizes.csv")
+    max_eff_size.to_csv(f"{out_dir}/segments{seg_len}TRs/max_effect_sizes.csv")
     logger.info(f"Done workflow \n _______________________")
 
 
