@@ -97,7 +97,7 @@ def compute_model_contrast(
     dirs = glob.glob(f"/scratch/flesp/data/isc-segments{seg_len}/*")
     """Compute and save HR-ISC regressed Brain-ISC maps"""
     logger = logging.getLogger(__name__)
-    brain_isc_dict, hr_isc_dict = create_model_input(isc_path, seg_len)
+    brain_isc_dict, hr_isc_dict = create_model_input(f"{isc_path}{seg_len}", seg_len)
     logger.info("Created data dictionaries")
     max_eff_size = pd.DataFrame(index=subjects)
     eff_size = []
