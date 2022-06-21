@@ -23,8 +23,7 @@ for task in tasks_list:
 
 
 def _resampling_rr_to_tr(postproc_path, tasks=ok_task):
-    """
-    """
+    """ """
     resampled_intervals = {}
     globbed_files = glob.glob(f"{postproc_path}/*/*/*.json")
     # find all files related to each task
@@ -41,6 +40,7 @@ def _resampling_rr_to_tr(postproc_path, tasks=ok_task):
             with open(fname[0], "rb") as opener:
                 json_file_with_physio_info = pickle.load(opener)
             rr_intervals = json_file_with_physio_info["PPG_clean_rr_systole"]
+            rr_intervals = nk.standardize(rr_intervals)
             data = pd.Series(
                 nk.signal_resample(rr_intervals, desired_length=int(nb_vol + 12))
             )
@@ -57,8 +57,7 @@ def _resampling_rr_to_tr(postproc_path, tasks=ok_task):
 @click.argument("isc_hr_path", type=click.Path(exists=True))
 @click.option("--length", type=int)
 def hr_isc(postproc_path, isc_hr_path, tasks=ok_task, length=30):
-    """
-    """
+    """ """
     logger = logging.getLogger(__name__)
     logger.info("Starting HR-ISC workflow")
 
@@ -75,7 +74,7 @@ def hr_isc(postproc_path, isc_hr_path, tasks=ok_task, length=30):
         # Segment the run
         for i, window in range(0, len(hr_intervals_tr_aligned[task]), length):
             # 100 TR long window, overlap
-            segment = hr_intervals_tr_aligned[task].loc[window:window + length]
+            segment = hr_intervals_tr_aligned[task].loc[window : window + length]
 
             if len(segment) < length / 2:
                 continue

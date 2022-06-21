@@ -22,8 +22,7 @@ coords = np.where(brain_mask)
 
 
 def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files):
-    """
-    """
+    """ """
     logger = logging.getLogger(__name__)
     # save ISC maps per pairs of subject
     counter = 0
@@ -43,14 +42,14 @@ def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files):
                 os.mkdir(f"{isc_map_path}/{task}")
 
             nib.save(
-                isc_nifti, f"{isc_map_path}/{task}/{pair}_{task}_{kind}ISC.nii.gz",
+                isc_nifti,
+                f"{isc_map_path}/{task}/{pair}_{task}_{kind}ISC.nii.gz",
             )
             counter += 1
 
 
 def _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
-    """
-    """
+    """ """
     logger = logging.getLogger(__name__)
     # save ISC maps per subject
     for n, fn in enumerate(files):
@@ -92,7 +91,7 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine):
         timeserie = img.get_fdata()
         imgs_sub = []
         # slice them subject-wise
-        for idx in range(0, timeserie.shape[3] - lng, lng/2):
+        for idx in range(0, timeserie.shape[3] - lng, lng / 2):
             slx = slice(0 + idx, lng + idx)
             sliced = nib.Nifti1Image(timeserie[:, :, :, slx], affine)
             imgs_sub.append(sliced)

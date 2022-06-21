@@ -4,9 +4,8 @@ import os
 import click
 import logging
 import itertools
-from nilearn import image, plotting, surface, input_data
+from nilearn import image, plotting, surface, maskers
 from nilearn.datasets import fetch_surf_fsaverage
-from nilearn.glm.second_level import SecondLevelModel, make_second_level_design_matrix
 import matplotlib.pyplot as plt
 import numpy as np
 import nibabel as nib
@@ -16,7 +15,7 @@ fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_mask = nib.load(mask_name)
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
-episodes = glob.glob(f"/scratch/flesp/data/iscs/*/")
+episodes = glob.glob("/scratch/flesp/data/isc-segments/*/")
 tasks = []
 for task in sorted(episodes):
     tasks.append(task[-13:-1])
@@ -24,18 +23,20 @@ for task in sorted(episodes):
 
 @click.command()
 @click.argument("data_dir", type=click.Path(exists=True))
+@click.argument("figures_dir", type=click.Path(exists=True))
 @click.option("--kind", type=str)
 @click.option("--slices", type=bool)
 def surface_isc_plots(
     data_dir,
+    figures_dir,
     subjects=subjects,
     tasks=tasks,
     kind="temporal",
-    views=["lateral", "medial"],
+    views=["lateral"],
     hemi="left",
     threshold=0.2,
     vmax=1.0,
-    slices=False
+    slices=False,
 ):
     """
     Plot surface subject-wise.
@@ -66,10 +67,15 @@ def surface_isc_plots(
                     isc_volumes = [image.mean_img(isc_files)]
             except StopIteration:
                 logger.info("No ISC map for this episode segment")
+
                 continue
             logger.info("Averaged BOLD images")
             # plot left hemisphere
-            for average_isc in isc_volumes:
+            for idx, average_isc in enumerate(isc_volumes):
+                if slices:
+                    fig_title = f"{subject} {task} segment {idx:02d}"
+                else:
+                    fig_title = f"{subject} {task}"
                 texture = surface.vol_to_surf(average_isc, fsaverage.pial_left)
                 plotting.plot_surf_stat_map(
                     fsaverage.pial_left,
@@ -80,11 +86,12 @@ def surface_isc_plots(
                     vmax=vmax,
                     bg_map=fsaverage.sulc_left,
                     view=view,
-                    title=f"{subject} {task}",
+                    title=fig_title,
                 )
                 fn = str(
-                    f"/scratch/flesp/figures/{task}/"
-                    f"left_{view}_surfplot_{kind}ISC_on_{task}_{subject}.png"
+                    f"{figures_dir}/{task}/"
+                    f"left_{view}_surfplot_{kind}"
+                    f"ISC_on_{task}seg{idx:02d}_{subject}.png"
                 )
                 if os.path.exists(fn):
                     os.remove(fn)
@@ -92,8 +99,10 @@ def surface_isc_plots(
                     plt.savefig(fn, bbox_inches="tight")
                 except FileNotFoundError:
                     logger.info(f"Creating path for {task}")
-                    os.mkdir(f"/scratch/flesp/figures/{task}/")
+                    os.mkdir(f"{data_dir}/figures/{task}/")
                     plt.savefig(fn, bbox_inches="tight")
+                plt.close("all")
+                continue
                 # plot right hemisphere
                 texture = surface.vol_to_surf(average_isc, fsaverage.pial_right)
                 plotting.plot_surf_stat_map(
@@ -105,14 +114,15 @@ def surface_isc_plots(
                     vmax=vmax,
                     bg_map=fsaverage.sulc_right,
                     view=view,
-                    title=f"{subject} {task}",
+                    title=fig_title,
                 )
                 plt.savefig(
-                    f"/scratch/flesp/figures/{task}/"
+                    f"{figures_dir}/{task}/"
                     f"right_{view}_surfplot_{kind}"
-                    f"ISC_on_{task}_{subject}.png",
+                    f"ISC_on_{task}seg{idx:02d}_{subject}.png",
                     bbox_inches="tight",
                 )
+                del texture
                 plt.close("all")
 
 
@@ -143,7 +153,7 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind="temporal"):
 
     logger.info(f"Season 1 communities")
     isc_files = sorted(glob.glob(f"{data_dir}/*s01*/*.nii.gz"))
-    masker = input_data.NiftiMasker(mask_img=mask_img)
+    masker = maskers.NiftiMasker(mask_img=mask_img)
     logger.info("Mask loaded")
 
     isc = [masker.fit_transform(i).mean(axis=0) for i in isc_files]
@@ -222,7 +232,7 @@ def plot_axial_slice(data_dir, tasks=tasks, taskwise=False, kind="temporal"):
         plotting.plot_stat_map(
             average,
             threshold=0.2,
-            vmax=0.75,
+            vmax=1,
             symmetric_cbar=False,
             display_mode="z",
             cut_coords=[-24, -6, 3, 25, 37, 51, 65],

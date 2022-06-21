@@ -30,7 +30,9 @@ brain_mask = io.load_boolean_mask(mask_name)
 coords = np.where(brain_mask)
 
 
-def create_model_input(isc_path,):
+def create_model_input(
+    isc_path,
+):
     """Build data dictionaries."""
     logger = logging.getLogger(__name__)
 
@@ -87,23 +89,32 @@ def create_model_input(isc_path,):
 
 @click.command()
 @click.argument("isc_path", type=click.Path(exists=True))
-def compute_model_contrast(isc_path,):
+def compute_model_contrast(
+    isc_path,
+):
     """Compute and save HR-ISC regressed Brain-ISC maps"""
     logger = logging.getLogger(__name__)
     brain_isc_dict, hr_isc_dict = create_model_input(isc_path)
     logger.info("Created data dictionaries")
+    max_eff_size = pd.DataFrame(index=subjects)
+    eff_size = []
 
     for sub in subjects:
         design_matrix = make_second_level_design_matrix(
             hr_isc_dict[sub]["subject_label"], hr_isc_dict[sub]
+        )
+        plotting.plot_design_matrix(
+            design_matrix, output_file=f"{out_dir}/{sub}_design-matrix.png"
         )
         logger.info("created design matrix")
         model = SecondLevelModel(smoothing_fwhm=6).fit(
             brain_isc_dict[sub], design_matrix=design_matrix
         )
         logger.info("fitted model")
-        z_score_map = model.compute_contrast("r_coeffs", output_type="z_score")
+        stat_map = model.compute_contrast("r_coeffs", output_type="all")
         logger.info(f"Computed model contrast for {sub}")
+        max = stat_map["effect_size"].get_fdata().max()
+        eff_size.append(max)
 
         # Make the ISC output a volume
         thresholded_map, threshold = threshold_stats_img(
@@ -116,8 +127,15 @@ def compute_model_contrast(isc_path,):
         view = plotting.view_img_on_surf(
             thresholded_map, threshold=threshold, surf_mesh="fsaverage"
         )
-        view.save_as_html(f"{sub}_HR-Brain-ISC_surface_plot.html")
+
+        nib.save(stat_map["z_score"], f"{out_dir}/{sub}_HR-Brain-ISC_zmap.nii.gz")
+
+        view.save_as_html(f"{out_dir}/{sub}_HR-Brain-ISC_surface_plot.html")
         logger.info(f"Saved stat map for {sub}")
+
+    # log effect sizes of models
+    max_eff_size["Effect_sizes"] = eff_size
+    max_eff_size.to_csv(f"{out_dir}/max_effect_sizes.csv")
     logger.info(f"Done workflow \n _______________________")
 
 

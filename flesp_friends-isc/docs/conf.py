@@ -41,7 +41,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = u"flesp_friends-isc"
+project = "flesp_friends-isc"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -184,8 +184,8 @@ latex_documents = [
     (
         "index",
         "flesp_friends-isc.tex",
-        u"flesp_friends-isc Documentation",
-        u"francois lespinasse",
+        "flesp_friends-isc Documentation",
+        "francois lespinasse",
         "manual",
     ),
 ]
@@ -219,8 +219,8 @@ man_pages = [
     (
         "index",
         "flesp_friends-isc",
-        u"flesp_friends-isc Documentation",
-        [u"francois lespinasse"],
+        "flesp_friends-isc Documentation",
+        ["francois lespinasse"],
         1,
     )
 ]
@@ -238,8 +238,8 @@ texinfo_documents = [
     (
         "index",
         "flesp_friends-isc",
-        u"flesp_friends-isc Documentation",
-        u"francois lespinasse",
+        "flesp_friends-isc Documentation",
+        "francois lespinasse",
         "flesp_friends-isc",
         "A short description of the project.",
         "Miscellaneous",
