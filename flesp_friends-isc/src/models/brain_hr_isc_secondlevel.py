@@ -16,11 +16,6 @@ from nilearn import plotting
 from nilearn.datasets import fetch_surf_fsaverage
 
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
-hr_coeffs = pd.read_csv(
-    f"/scratch/flesp/physio_data/isc_hr_coeffs-seg{seg_len}.csv", index_col=0
-)
-
-dirs = glob.glob(f"/scratch/flesp/data/isc-segments{seg_len}/*")
 
 fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
@@ -31,10 +26,13 @@ coords = np.where(brain_mask)
 
 def create_model_input(
     isc_path,
+    seg_len,
 ):
     """Build data dictionaries."""
     logger = logging.getLogger(__name__)
-
+    hr_coeffs = pd.read_csv(
+        f"/scratch/flesp/physio_data/isc_hr_coeffs-seg{seg_len}.csv", index_col=0
+    )
     brain_isc_dict = {}
     hr_isc_dict = {}
     for sub in subjects:
@@ -95,9 +93,11 @@ def compute_model_contrast(
     out_dir,
     seg_len="30",
 ):
+
+    dirs = glob.glob(f"/scratch/flesp/data/isc-segments{seg_len}/*")
     """Compute and save HR-ISC regressed Brain-ISC maps"""
     logger = logging.getLogger(__name__)
-    brain_isc_dict, hr_isc_dict = create_model_input(isc_path)
+    brain_isc_dict, hr_isc_dict = create_model_input(isc_path, seg_len)
     logger.info("Created data dictionaries")
     max_eff_size = pd.DataFrame(index=subjects)
     eff_size = []
