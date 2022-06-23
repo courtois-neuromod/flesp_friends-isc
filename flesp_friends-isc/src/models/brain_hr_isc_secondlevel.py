@@ -101,9 +101,10 @@ def compute_model_contrast(
     logger.info("Created data dictionaries")
     max_eff_size = pd.DataFrame(index=subjects)
     eff_size = []
-    coords = []
+    coords_size = []
+    coords_var = []
     variance = []
-    
+
     for sub in subjects:
         design_matrix = make_second_level_design_matrix(
             hr_isc_dict[sub]["subject_label"], hr_isc_dict[sub]
@@ -120,16 +121,20 @@ def compute_model_contrast(
         stat_map = model.compute_contrast("r_coeffs", output_type="all")
         logger.info(f"Computed model contrast for {sub}")
         x, y, z = plotting.find_xyz_cut_coords(stat_map["effect_size"])
+        a, b, c = plotting.find_xyz_cut_coords(stat_map["effect_variance"])
         coords.append([x, y, z])
+        coords_var.append([a, b, c])
         max_eff = stat_map["effect_size"].get_fdata().max()
         eff_size.append(max_eff)
-        variance_range = [stat_map["effect_variance"].get_fdata().min(),
-                          stat_map["effect_variance"].get_fdata().max()]
+        variance_range = [
+            stat_map["effect_variance"].get_fdata().min(),
+            stat_map["effect_variance"].get_fdata().max(),
+        ]
         variance.append(variance_range)
 
         # Make the ISC output a volume
         thresholded_map, threshold = threshold_stats_img(
-            stat_map['z_score'],
+            stat_map["z_score"],
             alpha=0.05,
             height_control="fpr",
             cluster_threshold=10,
@@ -151,9 +156,12 @@ def compute_model_contrast(
 
     # log effect sizes of models
     max_eff_size["Effect_sizes"] = eff_size
-    max_eff_size["Coordinates"] = coords
+    max_eff_size["Effect_size_coords"] = coords_size
     max_eff_size["Variance_range"] = variance
-    max_eff_size.to_csv(f"{out_dir}/segments{seg_len}TRs/effect_sizes-coords_and_variance_range.csv")
+    max_eff_size["Effect_variance_coords"] = coords_var
+    max_eff_size.to_csv(
+        f"{out_dir}/segments{seg_len}TRs/effect_sizes-coords_and_variance_range.csv"
+    )
     logger.info(f"Done workflow \n _______________________")
 
 
