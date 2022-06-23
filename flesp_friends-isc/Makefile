@@ -33,7 +33,7 @@ features:
 	$(PYTHON_INTERPRETER) src/features/brain_isc.py /scratch/flesp/data/processed /scratch/flesp/data/isc-segments $(USER_OPTIONS)
 ## Make figures
 figures:
-	$(PYTHON_INTERPRETER) src/visualization/visualize.py /scratch/flesp/data/iscs $(USER_OPTIONS)
+	$(PYTHON_INTERPRETER) src/visualization/visualize.py /scratch/flesp/data/isc-segments30 /scratch/flesp/figures/isc-segments30 $(USER_OPTIONS)
 ## Make second_level model
 model:
 		$(PYTHON_INTERPRETER) src/models/brain_hr_isc_secondlevel.py /scratch/flesp/data/isc-segments /scratch/flesp/data/second_level_models $(USER_OPTIONS)

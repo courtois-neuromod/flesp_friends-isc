@@ -85,7 +85,7 @@ def create_model_input(
 
 
 @click.command()
-@click.argument("isc_path", type=click.Path(exists=True))
+@click.argument("isc_path", type=click.Path(exists=False))
 @click.argument("out_dir", type=click.Path(exists=True))
 @click.option("--seg_len", type=str)
 def compute_model_contrast(
@@ -101,7 +101,9 @@ def compute_model_contrast(
     logger.info("Created data dictionaries")
     max_eff_size = pd.DataFrame(index=subjects)
     eff_size = []
-
+    coords = []
+    variance = []
+    
     for sub in subjects:
         design_matrix = make_second_level_design_matrix(
             hr_isc_dict[sub]["subject_label"], hr_isc_dict[sub]
@@ -117,12 +119,17 @@ def compute_model_contrast(
         logger.info("fitted model")
         stat_map = model.compute_contrast("r_coeffs", output_type="all")
         logger.info(f"Computed model contrast for {sub}")
+        x, y, z = plotting.find_xyz_cut_coords(stat_map["effect_size"])
+        coords.append([x, y, z])
         max_eff = stat_map["effect_size"].get_fdata().max()
         eff_size.append(max_eff)
+        variance_range = [stat_map["effect_variance"].get_fdata().min(),
+                          stat_map["effect_variance"].get_fdata().max()]
+        variance.append(variance_range)
 
         # Make the ISC output a volume
         thresholded_map, threshold = threshold_stats_img(
-            stat_map,
+            stat_map['z_score'],
             alpha=0.05,
             height_control="fpr",
             cluster_threshold=10,
@@ -133,7 +140,7 @@ def compute_model_contrast(
         )
 
         nib.save(
-            stat_map["z_score"],
+            thresholded_map,
             f"{out_dir}/segments{seg_len}TRs/{sub}_HR-Brain-ISC_zmap.nii.gz",
         )
 
@@ -144,7 +151,9 @@ def compute_model_contrast(
 
     # log effect sizes of models
     max_eff_size["Effect_sizes"] = eff_size
-    max_eff_size.to_csv(f"{out_dir}/segments{seg_len}TRs/max_effect_sizes.csv")
+    max_eff_size["Coordinates"] = coords
+    max_eff_size["Variance_range"] = variance
+    max_eff_size.to_csv(f"{out_dir}/segments{seg_len}TRs/effect_sizes-coords_and_variance_range.csv")
     logger.info(f"Done workflow \n _______________________")
 
 
