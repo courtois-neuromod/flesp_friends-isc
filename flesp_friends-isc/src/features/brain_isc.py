@@ -96,7 +96,7 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine):
             range_step = range(0, timeserie.shape[3] - lng, lng)
         # slice them subject-wise
         for idx in range_step:
-            slx = slice(0 + idx, lng + idx - 1)
+            slx = slice(0 + idx, lng + idx)
             sliced = nib.Nifti1Image(timeserie[:, :, :, slx], affine)
             imgs_sub.append(sliced)
         sub_sliced[i] = imgs_sub
@@ -230,13 +230,13 @@ def map_isc(
 
         logger.info("Saving images")
         if pairwise is False:
-            _save_sub_feature_img(isc_map_path, task, kind, files, roi)
+            _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi)
             # free up memory
             del masked_imgs, isc_imgs
 
         # if it's not pairwise
         else:
-            _save_pair_feature_img(isc_map_path, task, kind, files)
+            _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files)
             # free up memory
             del bold_imgs, isc_imgs
         logger.info(
