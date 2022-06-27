@@ -90,9 +90,13 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine):
         img = nib.load(processed)
         timeserie = img.get_fdata()
         imgs_sub = []
+        if lng == 100:
+            range_step = range(0, timeserie.shape[3] - lng, lng / 2)
+        else:
+            range_step = range(0, timeserie.shape[3] - lng, lng)
         # slice them subject-wise
-        for idx in range(0, timeserie.shape[3] - lng, lng / 2):
-            slx = slice(0 + idx, lng + idx)
+        for idx in range_step:
+            slx = slice(0 + idx, lng + idx - 1)
             sliced = nib.Nifti1Image(timeserie[:, :, :, slx], affine)
             imgs_sub.append(sliced)
         sub_sliced[i] = imgs_sub
@@ -127,6 +131,7 @@ def map_isc(
     drop=None,
     slices=False,
     lng=100,
+    stat_test=False,
 ):
     """
     Compute ISC for brain data.
@@ -139,7 +144,7 @@ def map_isc(
     tasks = glob.glob(f"{postproc_path}/*/")
 
     # walks subdirs with taks name (task-s01-e01a)
-    for task in sorted(tasks):
+    for idx_task, task in enumerate(sorted(tasks)):
         task = task[-13:-1]
         logger.info("Importing data")
         files = sorted(glob.glob(f"{postproc_path}/{task}/*.nii.gz*"))
@@ -222,8 +227,8 @@ def map_isc(
         else:
             logger.info(f"Cannot compute {kind} ISC on {task}")
             continue
-        logger.info("Saving images")
 
+        logger.info("Saving images")
         if pairwise is False:
             _save_sub_feature_img(isc_map_path, task, kind, files, roi)
             # free up memory
