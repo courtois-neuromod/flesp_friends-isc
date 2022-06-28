@@ -25,27 +25,28 @@ def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files):
     """ """
     logger = logging.getLogger(__name__)
     # save ISC maps per pairs of subject
-    counter = 0
-    for n, fn in enumerate(files):
-        _, sub_a = os.path.split(fn)
-        for m in range(n + 1, len(files)):
-            _, sub_b = os.path.split(files[m])
-            logger.info(f"{sub_a[:6]} | {sub_b[:6]}")
-            pair = f"{sub_a[:6]}" + f"-{sub_b[:6]}"
-            # Make the ISC output a volume
-            isc_vol = np.zeros(brain_nii.shape)
-            # Map the ISC data for the first participant into brain space
-            isc_vol[coords] = isc_imgs[counter, :]
-            # make a nii image of the isc map
-            isc_nifti = nib.Nifti1Image(isc_vol, brain_nii.affine, brain_nii.header)
-            if not os.path.exists(f"{isc_map_path}/{task}"):
-                os.mkdir(f"{isc_map_path}/{task}")
+    for idx_seg, isc_seg in enumerate(isc_imgs):
+        counter = 0
+        for n, fn in enumerate(files):
+            _, sub_a = os.path.split(fn)
+            for m in range(n + 1, len(files)):
+                _, sub_b = os.path.split(files[m])
+                logger.info(f"Segment {idx_seg:02d} | {sub_a[:6]} | {sub_b[:6]}")
+                pair = f"{sub_a[:6]}" + f"-{sub_b[:6]}"
+                # Make the ISC output a volume
+                isc_vol = np.zeros(brain_nii.shape)
+                # Map the ISC data for the first participant into brain space
+                isc_vol[coords] = isc_seg[counter, :]
+                # make a nii image of the isc map
+                isc_nifti = nib.Nifti1Image(isc_vol, brain_nii.affine, brain_nii.header)
+                if not os.path.exists(f"{isc_map_path}/{task}"):
+                    os.mkdir(f"{isc_map_path}/{task}")
 
-            nib.save(
-                isc_nifti,
-                f"{isc_map_path}/{task}/{pair}_{task}_{kind}ISC.nii.gz",
-            )
-            counter += 1
+                nib.save(
+                    isc_nifti,
+                    f"{isc_map_path}/{task}/{pair}_{task}seg{idx_seg:02d}_{kind}ISC.nii.gz",
+                )
+                counter += 1
 
 
 def _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):

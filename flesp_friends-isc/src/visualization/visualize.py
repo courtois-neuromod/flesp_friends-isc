@@ -58,7 +58,7 @@ def surface_isc_plots(
             isc_volumes = []
             logger.info(f"{subject} | {task} | {view}")
             isc_files = sorted(glob.glob(f"{data_dir}/{task}/{subject}*.nii.gz"))
-            isc_files = fnmatch.filter(isc_files, f"*{kind}*")            
+            isc_files = fnmatch.filter(isc_files, f"*{kind}*")
             try:
                 if slices is True:
                     for fn in isc_files:
@@ -68,7 +68,7 @@ def surface_isc_plots(
             except StopIteration:
                 logger.info("No ISC map for this episode segment")
                 continue
-            
+
             logger.info("Averaged BOLD images")
             # plot left hemisphere
             for idx, average_isc in enumerate(isc_volumes):
@@ -100,7 +100,7 @@ def surface_isc_plots(
                 except FileNotFoundError:
                     logger.info(f"Creating path for {task}")
                     os.mkdir(f"{figures_dir}/{task}/")
-                    plt.savefig(fn, bbox_inches="tight") 
+                    plt.savefig(fn, bbox_inches="tight")
                 # plot right hemisphere
                 texture = surface.vol_to_surf(average_isc, fsaverage.pial_right)
                 plotting.plot_surf_stat_map(
@@ -182,13 +182,8 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind="temporal"):
 @click.option("--kind", type=str)
 @click.option("--slices", type=bool)
 def plot_axial_slice(
-        data_dir,
-        figures_dir,
-        tasks=tasks,
-        taskwise=False,
-        kind="temporal",
-        slices=False,
-        ):
+    data_dir, figures_dir, tasks=tasks, taskwise=False, kind="temporal", slices=False,
+):
     """
     Plot axial slice.
 
@@ -260,6 +255,6 @@ if __name__ == "__main__":
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(level=logging.INFO, format=log_fmt)
-    #surface_isc_plots()
-    #plot_corr_mtx()
+    # surface_isc_plots()
+    # plot_corr_mtx()
     plot_axial_slice()
