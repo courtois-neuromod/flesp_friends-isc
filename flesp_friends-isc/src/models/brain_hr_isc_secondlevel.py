@@ -16,8 +16,6 @@ from nilearn import plotting
 from nilearn.datasets import fetch_surf_fsaverage
 import itertools
 
-subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
-
 fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_nii = nib.load(mask_name)
@@ -26,10 +24,13 @@ coords = np.where(brain_mask)
 
 
 def create_model_input(
-    isc_path, seg_len, pairwise=False,
+    isc_path,
+    seg_len,
+    pairwise=False,
 ):
     """Build data dictionaries."""
     logger = logging.getLogger(__name__)
+    subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
     if pairwise:
         fname = "pw_isc_hr_coeffs-seg"
         pairs = []
@@ -100,8 +101,7 @@ def create_model_input(
 def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
     """Compute and save HR-ISC regressed Brain-ISC maps"""
     logger = logging.getLogger(__name__)
-    logger.info("Created data dictionaries")
-
+    subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
     # defining pairs if not subjects
     if pairwise:
         fname = "pw_isc_hr_coeffs-seg"
@@ -117,6 +117,7 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
     brain_isc_dict, hr_isc_dict = create_model_input(
         f"{isc_path}{seg_len}", seg_len, pairwise
     )
+    logger.info("Created data dictionaries")
     # initializing results
     max_eff_size = pd.DataFrame(index=subjects)
     eff_size = []
