@@ -32,7 +32,7 @@ def create_model_input(
     logger = logging.getLogger(__name__)
     subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
     if pairwise:
-        fname = "pw_isc_hr_coeffs-seg"
+        fname = "pairwise_isc_hr_coeffs-seg"
         pairs = []
         for pair in itertools.combinations(subjects, 2):
             pairs.append(pair[0] + "-" + pair[1])
