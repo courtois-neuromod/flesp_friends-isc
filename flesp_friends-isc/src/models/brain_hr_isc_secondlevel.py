@@ -32,7 +32,7 @@ def create_model_input(
     logger = logging.getLogger(__name__)
     subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
     if pairwise:
-        fname = "pw_isc_hr_coeffs-seg"
+        fname = "pairwise_isc_hr_coeffs-seg"
         pairs = []
         for pair in itertools.combinations(subjects, 2):
             pairs.append(pair[0] + "-" + pair[1])
@@ -183,10 +183,10 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
         )
 
         view.save_as_html(
-            f"{out_dir}/{map_name}{seg_len}TRs/{sub}_HR-Brain-ISC_surface_plot.html"
+            f"{out_dir}/{map_name}-fpr{seg_len}TRs/{sub}_HR-Brain-ISC_surface_plot.html"
         )
         view_fdr.save_as_html(
-            f"{out_dir}/segments{seg_len}TRs/{sub}_HR-Brain-ISC_surface_plot.html"
+            f"{out_dir}/{map_name}-fdr{seg_len}TRs/{sub}_HR-Brain-ISC_surface_plot.html"
         )
         logger.info(f"Saved stat map for {sub}")
 
