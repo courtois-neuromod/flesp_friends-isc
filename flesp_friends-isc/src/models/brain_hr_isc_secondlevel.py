@@ -20,7 +20,6 @@ fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_nii = nib.load(mask_name)
 brain_mask = io.load_boolean_mask(mask_name)
-coords = np.where(brain_mask)
 
 
 def create_model_input(
@@ -145,7 +144,7 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
         # model results
         x, y, z = plotting.find_xyz_cut_coords(stat_map["effect_size"])
         a, b, c = plotting.find_xyz_cut_coords(stat_map["effect_variance"])
-        coords.append([x, y, z])
+        coords_size.append([x, y, z])
         coords_var.append([a, b, c])
         max_eff = stat_map["effect_size"].get_fdata().max()
         eff_size.append(max_eff)
