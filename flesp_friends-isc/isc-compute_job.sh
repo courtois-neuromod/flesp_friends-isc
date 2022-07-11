@@ -11,4 +11,4 @@
 
 workon flesp_friends-isc
 cd flesp_friends-isc
-make features USER_OPTIONS="--roi False --kind temporal --pairwise False --slices True"
+make features USER_OPTIONS="--roi False --kind temporal --pairwise True --slices True --lng 30"

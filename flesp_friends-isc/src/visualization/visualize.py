@@ -15,7 +15,7 @@ fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_mask = nib.load(mask_name)
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
-episodes = glob.glob("/scratch/flesp/data/isc-segments/*/")
+episodes = glob.glob("/scratch/flesp/data/isc-segments30/*/")
 tasks = []
 for task in sorted(episodes):
     tasks.append(task[-13:-1])
@@ -67,8 +67,8 @@ def surface_isc_plots(
                     isc_volumes = [image.mean_img(isc_files)]
             except StopIteration:
                 logger.info("No ISC map for this episode segment")
-
                 continue
+
             logger.info("Averaged BOLD images")
             # plot left hemisphere
             for idx, average_isc in enumerate(isc_volumes):
@@ -99,10 +99,8 @@ def surface_isc_plots(
                     plt.savefig(fn, bbox_inches="tight")
                 except FileNotFoundError:
                     logger.info(f"Creating path for {task}")
-                    os.mkdir(f"{data_dir}/figures/{task}/")
+                    os.mkdir(f"{figures_dir}/{task}/")
                     plt.savefig(fn, bbox_inches="tight")
-                plt.close("all")
-                continue
                 # plot right hemisphere
                 texture = surface.vol_to_surf(average_isc, fsaverage.pial_right)
                 plotting.plot_surf_stat_map(
@@ -180,15 +178,12 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind="temporal"):
 @click.command()
 @click.argument("data_dir", type=click.Path(exists=True))
 @click.argument("figures_dir", type=click.Path(exists=True))
+@click.option("--taskwise", type=bool)
 @click.option("--kind", type=str)
 @click.option("--slices", type=bool)
 def plot_axial_slice(
-        data_dir,
-        tasks=tasks,
-        taskwise=False,
-        kind="temporal"
-        slices=False,
-        ):
+    data_dir, figures_dir, tasks=tasks, taskwise=False, kind="temporal", slices=False,
+):
     """
     Plot axial slice.
 
@@ -253,13 +248,13 @@ def plot_axial_slice(
             cut_coords=[-24, -6, 3, 25, 37, 51, 65],
             title=f"{kind} ISC averaged across episodes",
         )
-        plt.savefig(f"/scratch/flesp/figures/{kind}ISC_on_All.png", bbox_inches="tight")
+        plt.savefig(f"{figures_dir}/{kind}ISC_on_All.png", bbox_inches="tight")
 
 
 if __name__ == "__main__":
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(level=logging.INFO, format=log_fmt)
-    surface_isc_plots()
-    plot_corr_mtx()
+    # surface_isc_plots()
+    # plot_corr_mtx()
     plot_axial_slice()

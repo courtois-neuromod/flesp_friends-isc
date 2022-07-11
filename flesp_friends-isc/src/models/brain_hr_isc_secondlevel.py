@@ -14,8 +14,7 @@ from brainiak import io
 from nilearn.glm import threshold_stats_img
 from nilearn import plotting
 from nilearn.datasets import fetch_surf_fsaverage
-
-subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
+import itertools
 
 fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
@@ -27,11 +26,21 @@ coords = np.where(brain_mask)
 def create_model_input(
     isc_path,
     seg_len,
+    pairwise=False,
 ):
     """Build data dictionaries."""
     logger = logging.getLogger(__name__)
+    subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
+    if pairwise:
+        fname = "pw_isc_hr_coeffs-seg"
+        pairs = []
+        for pair in itertools.combinations(subjects, 2):
+            pairs.append(pair[0] + "-" + pair[1])
+        subjects = pairs
+    else:
+        fname = "isc_hr_coeffs-seg"
     hr_coeffs = pd.read_csv(
-        f"/scratch/flesp/physio_data/isc_hr_coeffs-seg{seg_len}.csv", index_col=0
+        f"/scratch/flesp/physio_data/{fname}{seg_len}.csv", index_col=0
     )
     brain_isc_dict = {}
     hr_isc_dict = {}
@@ -85,22 +94,36 @@ def create_model_input(
 
 
 @click.command()
-@click.argument("isc_path", type=click.Path(exists=True))
+@click.argument("isc_path", type=click.Path(exists=False))
 @click.argument("out_dir", type=click.Path(exists=True))
 @click.option("--seg_len", type=str)
-def compute_model_contrast(
-    isc_path,
-    out_dir,
-    seg_len="30",
-):
-
-    dirs = glob.glob(f"/scratch/flesp/data/isc-segments{seg_len}/*")
+@click.option("--pairwise", type=bool)
+def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
     """Compute and save HR-ISC regressed Brain-ISC maps"""
     logger = logging.getLogger(__name__)
-    brain_isc_dict, hr_isc_dict = create_model_input(f"{isc_path}{seg_len}", seg_len)
+    subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
+    # defining pairs if not subjects
+    if pairwise:
+        fname = "pw_isc_hr_coeffs-seg"
+        map_name = "pw_segments"
+        pairs = []
+        for pair in itertools.combinations(subjects, 2):
+            pairs.append(pair[0] + "-" + pair[1])
+        subjects = pairs
+    else:
+        map_name = "segments"
+
+    # list models coeffs and niimg filenames
+    brain_isc_dict, hr_isc_dict = create_model_input(
+        f"{isc_path}{seg_len}", seg_len, pairwise
+    )
     logger.info("Created data dictionaries")
+    # initializing results
     max_eff_size = pd.DataFrame(index=subjects)
     eff_size = []
+    coords_size = []
+    coords_var = []
+    variance = []
 
     for sub in subjects:
         design_matrix = make_second_level_design_matrix(
@@ -116,13 +139,25 @@ def compute_model_contrast(
         )
         logger.info("fitted model")
         stat_map = model.compute_contrast("r_coeffs", output_type="all")
+
         logger.info(f"Computed model contrast for {sub}")
+
+        # model results
+        x, y, z = plotting.find_xyz_cut_coords(stat_map["effect_size"])
+        a, b, c = plotting.find_xyz_cut_coords(stat_map["effect_variance"])
+        coords.append([x, y, z])
+        coords_var.append([a, b, c])
         max_eff = stat_map["effect_size"].get_fdata().max()
         eff_size.append(max_eff)
+        variance_range = [
+            stat_map["effect_variance"].get_fdata().min(),
+            stat_map["effect_variance"].get_fdata().max(),
+        ]
+        variance.append(variance_range)
 
         # Make the ISC output a volume
         thresholded_map, threshold = threshold_stats_img(
-            stat_map,
+            stat_map["z_score"],
             alpha=0.05,
             height_control="fpr",
             cluster_threshold=10,
@@ -143,12 +178,12 @@ def compute_model_contrast(
         )
 
         nib.save(
-            stat_map["z_score"],
-            f"{out_dir}/segments{seg_len}TRs/{sub}_HR-Brain-ISC_zmap.nii.gz",
+            thresholded_map,
+            f"{out_dir}/{map_name}{seg_len}TRs/{sub}_HR-Brain-ISC_zmap.nii.gz",
         )
 
         view.save_as_html(
-            f"{out_dir}/segments{seg_len}TRs/{sub}_HR-Brain-ISC_surface_plot.html"
+            f"{out_dir}/{map_name}{seg_len}TRs/{sub}_HR-Brain-ISC_surface_plot.html"
         )
         view_fdr.save_as_html(
             f"{out_dir}/segments{seg_len}TRs/{sub}_HR-Brain-ISC_surface_plot.html"
@@ -157,7 +192,12 @@ def compute_model_contrast(
 
     # log effect sizes of models
     max_eff_size["Effect_sizes"] = eff_size
-    max_eff_size.to_csv(f"{out_dir}/segments{seg_len}TRs/max_effect_sizes.csv")
+    max_eff_size["Effect_size_coords"] = coords_size
+    max_eff_size["Variance_range"] = variance
+    max_eff_size["Effect_variance_coords"] = coords_var
+    max_eff_size.to_csv(
+        f"{out_dir}/{map_name}{seg_len}TRs/effect_sizes-coords_and_variance_range.csv"
+    )
     logger.info(f"Done workflow \n _______________________")
 
 
