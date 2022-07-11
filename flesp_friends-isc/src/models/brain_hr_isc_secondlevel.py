@@ -128,7 +128,17 @@ def compute_model_contrast(
             cluster_threshold=10,
             two_sided=True,
         )
+        fdr_map, fdr_threshold = threshold_stats_img(
+            stat_map,
+            alpha=0.05,
+            height_control="fpr",
+            cluster_threshold=10,
+            two_sided=True,
+        )
         view = plotting.view_img_on_surf(
+            thresholded_map, threshold=threshold, surf_mesh="fsaverage"
+        )
+        view_fdr = plotting.view_img_on_surf(
             thresholded_map, threshold=threshold, surf_mesh="fsaverage"
         )
 
@@ -138,6 +148,9 @@ def compute_model_contrast(
         )
 
         view.save_as_html(
+            f"{out_dir}/segments{seg_len}TRs/{sub}_HR-Brain-ISC_surface_plot.html"
+        )
+        view_fdr.save_as_html(
             f"{out_dir}/segments{seg_len}TRs/{sub}_HR-Brain-ISC_surface_plot.html"
         )
         logger.info(f"Saved stat map for {sub}")
