@@ -130,7 +130,7 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
         )
         plotting.plot_design_matrix(
             design_matrix,
-            output_file=f"{out_dir}/segments{seg_len}TRs/{sub}_design-matrix.png",
+            output_file=f"{out_dir}/{map_name}{seg_len}TRs/{sub}_design-matrix.png",
         )
         logger.info("created design matrix")
         model = SecondLevelModel(smoothing_fwhm=6).fit(
@@ -165,7 +165,7 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
         fdr_map, fdr_threshold = threshold_stats_img(
             stat_map['z_score'],
             alpha=0.05,
-            height_control="fpr",
+            height_control="fdr",
             cluster_threshold=10,
             two_sided=True,
         )
