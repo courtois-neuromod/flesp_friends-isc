@@ -163,7 +163,7 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
             two_sided=True,
         )
         fdr_map, fdr_threshold = threshold_stats_img(
-            stat_map,
+            stat_map['z_score'],
             alpha=0.05,
             height_control="fpr",
             cluster_threshold=10,
@@ -182,10 +182,10 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
         )
 
         view.save_as_html(
-            f"{out_dir}/{map_name}-fpr{seg_len}TRs/{sub}_HR-Brain-ISC_surface_plot.html"
+            f"{out_dir}/{map_name}{seg_len}TRs/{sub}_HR-Brain-ISC-fpr_surface_plot.html"
         )
         view_fdr.save_as_html(
-            f"{out_dir}/{map_name}-fdr{seg_len}TRs/{sub}_HR-Brain-ISC_surface_plot.html"
+            f"{out_dir}/{map_name}{seg_len}TRs/{sub}_HR-Brain-ISC-fdr_surface_plot.html"
         )
         logger.info(f"Saved stat map for {sub}")
 
