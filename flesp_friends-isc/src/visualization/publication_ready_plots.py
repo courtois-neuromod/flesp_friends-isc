@@ -55,9 +55,7 @@ def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None):
         p.add_layer({'left': sulc_lh, 'right': sulc_rh}, cmap='binary_r')
 
         # cold_hot is a common diverging colormap for neuroimaging
-        cmap = nilearn_cmaps['cold_hot']
-        p.add_layer({'left': data_lh, 'right': data_rh}, cmap=cmap,
-                    color_range=(-11, 11))
+        p.add_layer({'left': data_lh, 'right': data_rh})
 
         fig = p.build()
         fig.savefig(f"{figures_dir}/{fname}_HR-BrainISC.png")
