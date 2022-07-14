@@ -16,8 +16,9 @@ subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
 
 @click.command()
 @click.argument("data_dir", type=click.Path(exists=True))
-@click.argument("--pairwise", type=bool)
-@click.argument("--apply_threshold", type=float)
+@click.argument("figures_dir", type=click.Path(exists=True))
+@click.option("--pairwise", type=bool)
+@click.option("--apply_threshold", type=float)
 def surfplot(data_dir, pairwise=False, apply_threshold=None):
     """
     """
@@ -53,7 +54,7 @@ def surfplot(data_dir, pairwise=False, apply_threshold=None):
                     color_range=(-11, 11))
 
         fig = p.build()
-        fig.savefig()
+        fig.savefig(f"{figures_dir}/{fname}_HR-BrainISC.png")
 if __name__ == "__main__":
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
