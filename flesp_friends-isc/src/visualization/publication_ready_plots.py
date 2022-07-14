@@ -11,8 +11,7 @@ from surfplot import Plot
 from surfplot.utils import threshold
 import nibabel as nib
 from nilearn.plotting.cm import _cmap_d as nilearn_cmaps
-# global vars
-subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
+
 
 
 @click.command()
@@ -24,6 +23,8 @@ def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None):
     """
     """
     logger = logging.getLogger(__name__)
+    # global vars
+    subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
     if pairwise:
         pairs = []
         for pair in itertools.combinations(subjects, 2):
