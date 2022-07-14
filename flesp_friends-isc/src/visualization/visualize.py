@@ -26,6 +26,7 @@ for task in sorted(episodes):
 @click.argument("figures_dir", type=click.Path(exists=True))
 @click.option("--kind", type=str)
 @click.option("--slices", type=bool)
+@click.option("--pairwise", type=bool)
 def surface_isc_plots(
     data_dir,
     figures_dir,
@@ -37,6 +38,7 @@ def surface_isc_plots(
     threshold=0.2,
     vmax=1.0,
     slices=False,
+    pariwise=False,
 ):
     """
     Plot surface subject-wise.
@@ -53,6 +55,11 @@ def surface_isc_plots(
         Defaults to ['lateral', 'medial'].
     """
     logger = logging.getLogger(__name__)
+    if pairwise:
+        pairs = []
+        for pair in itertools.combinations(subjects, 2):
+            pairs.append(pair[0] + "-" + pair[1])
+        subjects = pairs
     for subject in subjects:
         for view, task in itertools.product(views, tasks):
             isc_volumes = []
