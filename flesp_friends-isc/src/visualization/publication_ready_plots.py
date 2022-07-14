@@ -20,7 +20,7 @@ subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
 @click.argument("figures_dir", type=click.Path(exists=True))
 @click.option("--pairwise", type=bool)
 @click.option("--apply_threshold", type=float)
-def surfplot(data_dir, pairwise=False, apply_threshold=None):
+def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None):
     """
     """
     logger = logging.getLogger(__name__)
