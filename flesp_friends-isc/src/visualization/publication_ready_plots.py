@@ -59,8 +59,6 @@ def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None):
         # cold_hot is a common diverging colormap for neuroimaging
         p.add_layer({'left': data_lh, 'right': data_rh})
         print('ic')
-        p.show(interactive=False)
-        print('this')
         p.render(offscreen=False)
         print('this')
 
