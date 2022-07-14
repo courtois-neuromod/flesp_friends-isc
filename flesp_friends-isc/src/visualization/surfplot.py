@@ -3,6 +3,7 @@
 import click
 import glob
 import itertools
+import logging
 # niimg dependencies
 from neuromaps.transforms import mni152_to_fslr
 from neuromaps.datasets import fetch_fslr
@@ -22,12 +23,16 @@ subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
 def surfplot(data_dir, pairwise=False, apply_threshold=None):
     """
     """
+    logger = logging.getLogger(__name__)
+    if apply_threshold is not None or isinstance(apply_threshold, float) is False:
+        raise ValueError
     if pairwise:
         pairs = []
         for pair in itertools.combinations(subjects, 2):
             pairs.append(pair[0] + "-" + pair[1])
         subjects = pairs
     for fname in subjects:
+        logger.info(f'{fname}')
         # load stat map
         img = nib.load(f"{data_dir}/{fname}*.nii.gz")
         # convert niimg type
@@ -37,14 +42,16 @@ def surfplot(data_dir, pairwise=False, apply_threshold=None):
             data_lh = gii_lh.agg_data()
             data_rh = gii_rh.agg_data()
         else:
-            data_lh = threshold(gii_lh.agg_data(), 0.2)
-            data_rh = threshold(gii_rh.agg_data(), 0.2)
+            data_lh = threshold(gii_lh.agg_data(), apply_threshold)
+            data_rh = threshold(gii_rh.agg_data(), apply_threshold)
 
         # get surfaces + sulc maps
         surfaces = fetch_fslr()
         lh, rh = surfaces['inflated']
         sulc_lh, sulc_rh = surfaces['sulc']
+        logger.info('loaded surface')
 
+        # constructing plot
         p = Plot(lh, rh, layout='row')
         p.add_layer({'left': sulc_lh, 'right': sulc_rh}, cmap='binary_r')
 
