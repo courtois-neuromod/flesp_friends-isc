@@ -61,6 +61,7 @@ def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None):
         print('ic')
         p.show(interactive=False)
         p.render(offscreen=False)
+        print('this')
 
         fig = p.build()
         fig.savefig(f"{figures_dir}/{fname}_HR-BrainISC.png")
