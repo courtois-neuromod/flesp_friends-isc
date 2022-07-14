@@ -54,3 +54,8 @@ def surfplot(data_dir, pairwise=False, apply_threshold=None):
 
         fig = p.build()
         fig.savefig()
+if __name__ == "__main__":
+    # NOTE: from command line `make_dataset input_data output_filepath`
+    log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    logging.basicConfig(level=logging.INFO, format=log_fmt)
+    surfplot()
