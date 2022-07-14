@@ -33,7 +33,7 @@ def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None):
     for fname in subjects:
         logger.info(f'{fname}')
         # load stat map
-        img = nib.load(f"{data_dir}/{fname}*.nii.gz")
+        img = nib.load(glob.glob(f"{data_dir}/{fname}*.nii.gz"))
         # convert niimg type
         gii_lh, gii_rh = mni152_to_fslr(img)
         # threshold raw temporal Brain-ISC
