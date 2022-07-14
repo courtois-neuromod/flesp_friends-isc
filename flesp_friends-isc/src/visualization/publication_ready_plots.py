@@ -24,8 +24,6 @@ def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None):
     """
     """
     logger = logging.getLogger(__name__)
-    if apply_threshold is not None or isinstance(apply_threshold, float) is False:
-        raise ValueError
     if pairwise:
         pairs = []
         for pair in itertools.combinations(subjects, 2):
