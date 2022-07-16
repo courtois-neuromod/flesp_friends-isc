@@ -44,7 +44,7 @@ def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None):
             data_rh = threshold(gii_rh.agg_data(), apply_threshold)
 
         # get surfaces + sulc maps
-        surfaces = fetch_fslr(density="164k")
+        surfaces = fetch_fslr()
         lh, rh = surfaces["inflated"]
         sulc_lh, sulc_rh = surfaces["sulc"]
         logger.info("loaded surface")
@@ -63,11 +63,13 @@ def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None):
 
         # cold_hot is a common diverging colormap for neuroimaging
         p.add_layer(
-            {"left": data_lh, "right": data_rh}, cbar_label="HR Regressed Brain Sync"
+            {"left": data_lh, "right": data_rh}, cbar_label="HR-ISC ~ Brain-ISC"
         )
-
+        kws = dict(location='bottom', draw_border=False, aspect=10, shrink=.2,
+                   decimals=0, pad=0)
         fig = p.build()
-        fig.savefig(f"{figures_dir}/{fname}_HR-BrainISC.png")
+        fig.axes[0].set_title(f'Brain-ISC regressed by HR-ISC \n {fname}', pad=-3)
+        fig.savefig(f"{figures_dir}/{fname}_HR-BrainISC.png", dpi=300)
 
 
 if __name__ == "__main__":
