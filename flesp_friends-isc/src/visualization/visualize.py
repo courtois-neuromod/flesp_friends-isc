@@ -15,11 +15,11 @@ fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_mask = nib.load(mask_name)
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
-episodes = glob.glob("/scratch/flesp/data/isc-segments30/*/")
+episodes = glob.glob("/scratch/flesp/data/pw_isc-segments30/*/")
 tasks = []
 for task in sorted(episodes):
     tasks.append(task[-13:-1])
-
+tasks = tasks[-26:]
 
 @click.command()
 @click.argument("data_dir", type=click.Path(exists=True))
@@ -38,7 +38,7 @@ def surface_isc_plots(
     threshold=0.2,
     vmax=1.0,
     slices=False,
-    pariwise=False,
+    pairwise=False,
 ):
     """
     Plot surface subject-wise.
