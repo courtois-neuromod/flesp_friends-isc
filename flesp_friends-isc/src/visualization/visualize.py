@@ -189,7 +189,12 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind="temporal"):
 @click.option("--kind", type=str)
 @click.option("--slices", type=bool)
 def plot_axial_slice(
-    data_dir, figures_dir, tasks=tasks, taskwise=False, kind="temporal", slices=False,
+    data_dir,
+    figures_dir,
+    tasks=tasks,
+    taskwise=False,
+    kind="temporal",
+    slices=False,
 ):
     """
     Plot axial slice.

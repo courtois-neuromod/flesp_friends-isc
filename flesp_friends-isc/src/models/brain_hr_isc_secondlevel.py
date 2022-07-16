@@ -163,7 +163,7 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
             two_sided=True,
         )
         fdr_map, fdr_threshold = threshold_stats_img(
-            stat_map['z_score'],
+            stat_map["z_score"],
             alpha=0.05,
             height_control="fdr",
             cluster_threshold=10,
