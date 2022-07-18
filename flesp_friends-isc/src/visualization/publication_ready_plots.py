@@ -11,7 +11,7 @@ from neuromaps.datasets import fetch_fslr
 from surfplot import Plot
 from surfplot.utils import threshold
 import nibabel as nib
-from nilearn.plotting.cm import _cmap_d as nilearn_cmaps
+from nilearn.image import mean_img
 
 
 @click.command()
@@ -19,7 +19,8 @@ from nilearn.plotting.cm import _cmap_d as nilearn_cmaps
 @click.argument("figures_dir", type=click.Path(exists=True))
 @click.option("--pairwise", type=bool)
 @click.option("--apply_threshold", type=float)
-def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None):
+@click.option("--average", type=bool)
+def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None, average=False):
     """ """
     logger = logging.getLogger(__name__)
     # global vars
@@ -31,8 +32,11 @@ def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None):
         subjects = pairs
     for fname in subjects:
         logger.info(f"{fname}")
-        # load stat map
-        img = nib.load(glob.glob(f"{data_dir}/{fname}*.nii.gz")[0])
+        if average is False:
+            # load stat map
+            img = nib.load(glob.glob(f"{data_dir}/{fname}*.nii.gz")[0])
+        else:
+            img = mean_img(glob.glob(f"{data_dir}/*.nii.gz"))
         # convert niimg type
         gii_lh, gii_rh = mni152_to_fslr(img)
         # threshold raw temporal Brain-ISC
@@ -67,9 +71,13 @@ def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None):
         )
         kws = dict(location='bottom', draw_border=False, aspect=10, shrink=.2,
                    decimals=0, pad=0)
-        fig = p.build()
+        fig = p.build(cbar_kws=kws)
         fig.axes[0].set_title(f'Brain-ISC regressed by HR-ISC \n {fname}', pad=-3)
-        fig.savefig(f"{figures_dir}/{fname}_HR-BrainISC.png", dpi=300)
+        if average is True:
+            fig.savefig(f"{figures_dir}/mean_HR-BrainISC.png", dpi=300)
+            break
+        else:
+            fig.savefig(f"{figures_dir}/{fname}_HR-BrainISC.png", dpi=300)
 
 
 if __name__ == "__main__":
