@@ -25,7 +25,7 @@ def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None, averag
     logger = logging.getLogger(__name__)
     # global vars
     subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
-    if pairwise:
+    if pairwise is True:
         pairs = []
         for pair in itertools.combinations(subjects, 2):
             pairs.append(pair[0] + "-" + pair[1])
