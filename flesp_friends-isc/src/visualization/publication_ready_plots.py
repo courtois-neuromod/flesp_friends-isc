@@ -20,8 +20,31 @@ from nilearn.image import mean_img
 @click.option("--pairwise", type=bool)
 @click.option("--apply_threshold", type=float)
 @click.option("--average", type=bool)
-def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None, average=False):
-    """ """
+def surfplot(
+    data_dir, figures_dir, pairwise=False, apply_threshold=None, average=False
+):
+    """
+    Generate publication-ready surface plots.
+
+    A function embedded callable through a command-line interface that generates
+    publication-ready figures of statistical brain surface map (volume).
+
+    Arguments
+    ---------
+    data_dir : path
+        directory with stat maps (.nii.gz) of Brain-HR-ISC.
+    figures_dir: path
+        output directory (/scratch/data/figures).
+    pairwise : bool
+        whether of not to use the data from pairwise ISC method.
+    apply threshold : float
+        whether or not to apply a low-cut threshold to provided stat map.
+    average : bool
+        whether or not to average multiple stat maps (i.e. if using
+        first order ISC volumes).
+
+    Saves figure in a static image format showing both hemispheres
+    """
     logger = logging.getLogger(__name__)
     # global vars
     subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
@@ -69,10 +92,16 @@ def surfplot(data_dir, figures_dir, pairwise=False, apply_threshold=None, averag
         p.add_layer(
             {"left": data_lh, "right": data_rh}, cbar_label="HR-ISC ~ Brain-ISC"
         )
-        kws = dict(location='bottom', draw_border=False, aspect=10, shrink=.2,
-                   decimals=0, pad=0)
+        kws = dict(
+            location="bottom",
+            draw_border=False,
+            aspect=10,
+            shrink=0.2,
+            decimals=0,
+            pad=0,
+        )
         fig = p.build(cbar_kws=kws)
-        fig.axes[0].set_title(f'Brain-ISC regressed by HR-ISC \n {fname}', pad=-3)
+        fig.axes[0].set_title(f"Brain-ISC regressed by HR-ISC \n {fname}", pad=-3)
         if average is True:
             fig.savefig(f"{figures_dir}/mean_HR-BrainISC.png", dpi=300)
             break
