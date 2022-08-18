@@ -50,7 +50,8 @@ def create_model_input(
         sub_hr_coeffs = hr_coeffs.iloc[i].to_frame().T
         if threshold is not None:
             logger.info(f"applying threshold: {threshold}")
-            sub_hr_coeffs = sub_hr_coeffs.where(sub_hr_coeffs.values > threshold)
+            sub_hr_coeffs = sub_hr_coeffs.where(sub_hr_coeffs.values > threshold).dropna(axis=1)
+        logger.info(sub_hr_coeffs)
         hr_brain_segment_list = []
         segments_to_remove = []
         second_level_input = []
@@ -102,7 +103,8 @@ def create_model_input(
 @click.argument("out_dir", type=click.Path(exists=True))
 @click.option("--seg_len", type=str)
 @click.option("--pairwise", type=bool)
-def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
+@click.option("--threshold", type=float)
+def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False, threshold=None):
     """Compute and save HR-ISC regressed Brain-ISC maps"""
     logger = logging.getLogger(__name__)
     subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
@@ -123,7 +125,7 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
 
     # list models coeffs and niimg filenames
     brain_isc_dict, hr_isc_dict = create_model_input(
-        f"{isc_path}", seg_len, pairwise, threshold=0.3,
+        f"{isc_path}", seg_len, pairwise, threshold=threshold,
     )
     logger.info("Created data dictionaries")
     # initializing results
@@ -137,12 +139,12 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
         design_matrix = make_second_level_design_matrix(
             hr_isc_dict[sub]["subject_label"], hr_isc_dict[sub]
         )
-        if os.path.exists(f"{out_dir}/{map_name}{seg_len}TRs")
+        if os.path.exists(f"{out_dir}/{map_name}{seg_len}TRs") is False:
             os.mkdir(f"{out_dir}/{map_name}{seg_len}TRs")
         plotting.plot_design_matrix(
             design_matrix,
             output_file=f"{out_dir}/{map_name}{seg_len}TRs/{sub}_design-matrix.png",
-        )i
+        )
         logger.info("created design matrix")
         model = SecondLevelModel(smoothing_fwhm=6).fit(
             brain_isc_dict[sub], design_matrix=design_matrix
