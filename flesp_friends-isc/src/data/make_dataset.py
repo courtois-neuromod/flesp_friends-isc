@@ -9,7 +9,8 @@ import fnmatch
 import pprintpp
 import numpy as np
 import pandas as pd
-from nilearn.maskers import NiftiMasker
+from nilearn.maskers import NiftiMasker, MultiNiftiMasker, NiftiLabelsMasker
+from nilearn.datasets import fetch_atlas_difumo()
 from nilearn.interfaces.fmriprep import load_confounds_strategy
 import nibabel as nib
 
@@ -44,6 +45,27 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
         )
         cleaned = maskers.fit_transform(scans, confounds=confounds)
         masked_imgs = maskers.inverse_transform(cleaned)
+    # Derive ROIs signal
+    elif roi is True:
+        difumo = fetch_atlas_difumo(
+            dimension=64,
+            resolution_mm=2,
+            legacy_format=False,
+            )
+        masked_imgs = []
+        for bold, conf in zip(scans, confounds):
+            maskers = NiftiLabelsMasker(
+                labels_img=difumo.maps,
+                t_r=1.49,
+                standardize=False,
+                detrend=True,
+                high_pass=0.01,
+                low_pass=0.1,
+                smoothing_fwhm=fwhm,
+                memory="nilearn_cache",
+            )
+            cleaned = maskers.fit_transform(scans, confounds=confounds)
+            masked_imgs.append(maskers.inverse_transform(cleaned))
     # individual anatomical mask subject-wise
     else:
         masked_imgs = []
