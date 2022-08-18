@@ -10,7 +10,7 @@ import pprintpp
 import numpy as np
 import pandas as pd
 from nilearn.maskers import NiftiMasker, MultiNiftiMasker, NiftiLabelsMasker
-from nilearn.datasets import fetch_atlas_difumo()
+from nilearn.datasets import fetch_atlas_difumo
 from nilearn.interfaces.fmriprep import load_confounds_strategy
 import nibabel as nib
 
@@ -47,11 +47,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
         masked_imgs = maskers.inverse_transform(cleaned)
     # Derive ROIs signal
     elif roi is True:
-        difumo = fetch_atlas_difumo(
-            dimension=64,
-            resolution_mm=2,
-            legacy_format=False,
-            )
+        difumo = fetch_atlas_difumo(dimension=64, resolution_mm=2, legacy_format=False,)
         masked_imgs = []
         for bold, conf in zip(scans, confounds):
             maskers = NiftiLabelsMasker(
@@ -136,7 +132,7 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
     return nifti_fnames, mask_fnames
 
 
-def process_episodewise(fnames, output_filepath, task_name, masks, fwhm):
+def process_episodewise(fnames, output_filepath, task_name, masks, fwhm, roi):
     """
     Process episodes.
 
@@ -164,7 +160,9 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm):
         conf = load_confounds_strategy(nii, denoise_strategy="simple", motion="basic")
         confs.append(conf)
 
-    masked_images = nifti_mask(scans=fnames, masks=masks, confounds=confs, fwhm=fwhm)
+    masked_images = nifti_mask(
+        scans=fnames, masks=masks, confounds=confs, fwhm=fwhm, roi=roi
+    )
 
     # print the shape
     for i, img in enumerate(masked_images):
@@ -172,6 +170,8 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm):
         print(f"Task : {task_name} \n" f"Subject ID: {sub} \n" f"shape:{np.shape(img)}")
 
     tmpl = f"space-MNI152NLin2009cAsym_desc-fwhm{fwhm}"
+    if roi is True:
+        tmpl = "difumo64"
 
     del confs
     for i, img in enumerate(masked_images):
@@ -190,6 +190,7 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm):
 @click.command()
 @click.argument("input_filepath", type=click.Path(exists=True))
 @click.argument("output_filepath", type=click.Path())
+@click.option("--roi", type=bool)
 def main(input_filepath, output_filepath):
     """
     Prepare dataset.
@@ -216,7 +217,7 @@ def main(input_filepath, output_filepath):
         masks = fnmatch.filter(mask_names, f"*{task_name}*")
         fnames.sort()
         masks.sort()
-        process_episodewise(fnames, output_filepath, task_name, masks, fwhm=6)
+        process_episodewise(fnames, output_filepath, task_name, masks, fwhm=6, roi=True)
         logger.info(
             f"Done processing : {task_name} \n" "---------------------------------"
         )
