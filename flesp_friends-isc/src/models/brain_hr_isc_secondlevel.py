@@ -26,11 +26,12 @@ def create_model_input(
     isc_path,
     seg_len,
     pairwise=False,
+    threshold=None,
 ):
     """Build data dictionaries."""
     logger = logging.getLogger(__name__)
     subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
-    if pairwise:
+    if pairwise is True:
         fname = "pairwise_isc_hr_coeffs-seg"
         pairs = []
         for pair in itertools.combinations(subjects, 2):
@@ -44,16 +45,21 @@ def create_model_input(
     brain_isc_dict = {}
     hr_isc_dict = {}
     for sub in subjects:
-        logger.info(f"Creating model input for {sub}")
-        sub_hr_coeffs = hr_coeffs.iloc[subjects.index(sub)].to_frame().T
+        logger.info(f"Creating model input for {sub}") 
+        i = subjects.index(sub)
+        sub_hr_coeffs = hr_coeffs.iloc[i].to_frame().T
+        if threshold is not None:
+            logger.info(f"applying threshold: {threshold}")
+            sub_hr_coeffs = sub_hr_coeffs.where(sub_hr_coeffs.values > threshold)
         hr_brain_segment_list = []
         segments_to_remove = []
         second_level_input = []
 
-        for dir in sorted(glob.glob(f"{isc_path}/*")):
+        for directory in sorted(glob.glob(f"{isc_path}{seg_len}/*")):
 
-            task_name = os.path.split(dir)[1]
-            scan_segments_list = sorted(glob.glob(f"{isc_path}/{task_name}/{sub}*"))
+            task_name = os.path.split(directory)[1]
+            scan_segments_list = sorted(glob.glob((f"{isc_path}{seg_len}/{task_name}/{sub}*")))
+          
             # Make sure subject has proper files
             if scan_segments_list == []:
                 logger.info(f"no file for {sub} in {task_name}")
@@ -64,7 +70,7 @@ def create_model_input(
                     hr_brain_segment_list.append(f"{task_name}seg{idx:02d}")
                     second_level_input.append(
                         glob.glob(
-                            f"{isc_path}/{task_name}/"
+                            f"{isc_path}{seg_len}/{task_name}/"
                             f"{sub}*{task_name}seg"
                             f"{idx:02d}_"
                             f"temporalISC.nii.gz"
@@ -91,7 +97,6 @@ def create_model_input(
         )
     return brain_isc_dict, hr_isc_dict
 
-
 @click.command()
 @click.argument("isc_path", type=click.Path(exists=False))
 @click.argument("out_dir", type=click.Path(exists=True))
@@ -102,19 +107,23 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
     logger = logging.getLogger(__name__)
     subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
     # defining pairs if not subjects
-    if pairwise:
+    if pairwise is True:
         fname = "pw_isc_hr_coeffs-seg"
         map_name = "pw_segments"
+        if threshold is not None:
+            map_name += f'_threshold{str(threshold)}'
         pairs = []
         for pair in itertools.combinations(subjects, 2):
             pairs.append(pair[0] + "-" + pair[1])
         subjects = pairs
+    elif threshold is not None and pairwise is False:
+        map_name = f"segments_threshold{str(threshold)}"
     else:
         map_name = "segments"
 
     # list models coeffs and niimg filenames
     brain_isc_dict, hr_isc_dict = create_model_input(
-        f"{isc_path}{seg_len}", seg_len, pairwise
+        f"{isc_path}", seg_len, pairwise, threshold=0.3,
     )
     logger.info("Created data dictionaries")
     # initializing results
@@ -128,10 +137,12 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
         design_matrix = make_second_level_design_matrix(
             hr_isc_dict[sub]["subject_label"], hr_isc_dict[sub]
         )
+        if os.path.exists(f"{out_dir}/{map_name}{seg_len}TRs")
+            os.mkdir(f"{out_dir}/{map_name}{seg_len}TRs")
         plotting.plot_design_matrix(
             design_matrix,
             output_file=f"{out_dir}/{map_name}{seg_len}TRs/{sub}_design-matrix.png",
-        )
+        )i
         logger.info("created design matrix")
         model = SecondLevelModel(smoothing_fwhm=6).fit(
             brain_isc_dict[sub], design_matrix=design_matrix
@@ -173,7 +184,7 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False):
             thresholded_map, threshold=threshold, surf_mesh="fsaverage"
         )
         view_fdr = plotting.view_img_on_surf(
-            thresholded_map, threshold=threshold, surf_mesh="fsaverage"
+            fdr_map, threshold=fdr_threshold, surf_mesh="fsaverage"
         )
 
         nib.save(
@@ -212,3 +223,6 @@ if __name__ == "__main__":
     # load up the .env entries as environment variables
     load_dotenv(find_dotenv())
     compute_model_contrast()
+"""Brain-HR-ISC workflow."""
+import os
+import logging
