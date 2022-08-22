@@ -48,7 +48,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
     # Derive ROIs signal
     elif roi is True:
         difumo = fetch_atlas_difumo(
-            dimension=64,
+            dimension=1024,
             resolution_mm=2,
             legacy_format=False,
         )
