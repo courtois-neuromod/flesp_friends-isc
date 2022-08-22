@@ -27,7 +27,7 @@ requirements: test_environment
 
 ## Make Dataset
 data:
-	$(PYTHON_INTERPRETER) src/data/make_dataset.py /lustre03/project/rrg-pbellec/flesp/flesp_friends-isc/data/friends.fmriprep /scratch/flesp/data/processed
+	$(PYTHON_INTERPRETER) src/data/make_dataset.py /lustre03/project/rrg-pbellec/flesp/flesp_friends-isc/data/friends.fmriprep /scratch/flesp/data/processed-roi
 ## Make features
 features:
 	$(PYTHON_INTERPRETER) src/features/brain_isc.py /scratch/flesp/data/processed /scratch/flesp/data/isc-segments30 $(USER_OPTIONS)

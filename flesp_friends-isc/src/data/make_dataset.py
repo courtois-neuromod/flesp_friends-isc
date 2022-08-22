@@ -9,7 +9,7 @@ import fnmatch
 import pprintpp
 import numpy as np
 import pandas as pd
-from nilearn.maskers import NiftiMasker, MultiNiftiMasker, NiftiLabelsMasker
+from nilearn.maskers import NiftiMasker, MultiNiftiMasker, NiftiMapsMasker
 from nilearn.datasets import fetch_atlas_difumo
 from nilearn.interfaces.fmriprep import load_confounds_strategy
 import nibabel as nib
@@ -50,17 +50,16 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
         difumo = fetch_atlas_difumo(dimension=64, resolution_mm=2, legacy_format=False,)
         masked_imgs = []
         for bold, conf in zip(scans, confounds):
-            maskers = NiftiLabelsMasker(
-                labels_img=difumo.maps,
+            maskers = NiftiMapsMasker(
+                maps_img=difumo.maps,
                 t_r=1.49,
                 standardize=False,
                 detrend=True,
                 high_pass=0.01,
                 low_pass=0.1,
                 smoothing_fwhm=fwhm,
-                memory="nilearn_cache",
             )
-            cleaned = maskers.fit_transform(scans, confounds=confounds)
+            cleaned = maskers.fit_transform(bold)
             masked_imgs.append(maskers.inverse_transform(cleaned))
     # individual anatomical mask subject-wise
     else:
@@ -191,7 +190,7 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm, roi):
 @click.argument("input_filepath", type=click.Path(exists=True))
 @click.argument("output_filepath", type=click.Path())
 @click.option("--roi", type=bool)
-def main(input_filepath, output_filepath):
+def main(input_filepath, output_filepath, roi=False):
     """
     Prepare dataset.
 
@@ -205,7 +204,7 @@ def main(input_filepath, output_filepath):
     nifti_names, mask_names = create_data_dictionary(data_dir, verbose=True)
     episodes = list(
         pd.read_csv(f"{project_dir}/episodes.csv", delimiter=",", header=None).iloc[
-            50:, 0
+            45:, 0
         ]
     )
     logger.info(f"Iterating through episodes : {episodes[:5]}...")
