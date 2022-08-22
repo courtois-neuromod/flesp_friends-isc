@@ -47,7 +47,11 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
         masked_imgs = maskers.inverse_transform(cleaned)
     # Derive ROIs signal
     elif roi is True:
-        difumo = fetch_atlas_difumo(dimension=64, resolution_mm=2, legacy_format=False,)
+        difumo = fetch_atlas_difumo(
+            dimension=64,
+            resolution_mm=2,
+            legacy_format=False,
+        )
         masked_imgs = []
         for bold, conf in zip(scans, confounds):
             maskers = NiftiMapsMasker(
@@ -59,7 +63,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
                 low_pass=0.1,
                 smoothing_fwhm=fwhm,
             )
-            cleaned = maskers.fit_transform(bold)
+            cleaned = maskers.fit_transform(bold, confounds=conf[0])
             masked_imgs.append(maskers.inverse_transform(cleaned))
     # individual anatomical mask subject-wise
     else:
