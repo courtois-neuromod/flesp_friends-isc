@@ -163,17 +163,12 @@ def map_isc(
             logger.info(fn[:6])
 
         # Parcel space or not
-        # if roi is True:
-        # logger.info("Masking data using labels")
-        # mask_name = "/scratch/flesp/fsl/data/atlases/HarvardOxford/HarvardOxford-cortl-maxprob-thr25-2mm.nii.gz"
-        # brain_nii = nib.load(mask_name)
-        # brain_mask = brain_nii.get_fdata()
-        # masker = NiftiLabelsMasker(labels_img=brain_nii.get_filename(),
-        #                           standardize=True, verbose=5)
-        # bold_imgs = []
-        # for fn in files:
-        #     timeserie = masker.fit_transform(fn)
-        #     bold_imgs.append(timeserie)
+        if roi is True:
+            logger.info("Loading ROIs data")
+            bold_imgs = []
+            for fn in files:
+                timeserie = io.load_images(fn)
+                bold_imgs.append(timeserie)
 
         # here we render in voxel space
         # Option to segment run in smaller windows
@@ -211,10 +206,12 @@ def map_isc(
             logger.info(f"{kind} ISC with pairwise approach")
         else:
             logger.info(f"{kind} ISC with Leave-One-Out approach")
-        #
+        # Temporal ISC workflow either for sliced or not timeseries
         if kind == "temporal":
+            # build a list even though it's a single ISC for that run
             if not slices:
                 isc_imgs = [isc(bold_imgs, pairwise=pairwise)]
+            # workflow for sliced timeseries
             else:
                 isc_imgs = []
                 for niimg_obj in masked_imgs:

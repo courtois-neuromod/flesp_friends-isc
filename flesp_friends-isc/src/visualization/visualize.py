@@ -21,6 +21,7 @@ for task in sorted(episodes):
     tasks.append(task[-13:-1])
 tasks = tasks[-22:]
 
+
 @click.command()
 @click.argument("data_dir", type=click.Path(exists=True))
 @click.argument("figures_dir", type=click.Path(exists=True))
@@ -189,12 +190,7 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind="temporal"):
 @click.option("--kind", type=str)
 @click.option("--slices", type=bool)
 def plot_axial_slice(
-    data_dir,
-    figures_dir,
-    tasks=tasks,
-    taskwise=False,
-    kind="temporal",
-    slices=False,
+    data_dir, figures_dir, tasks=tasks, taskwise=False, kind="temporal", slices=False,
 ):
     """
     Plot axial slice.

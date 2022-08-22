@@ -41,6 +41,7 @@ def _resampling_rr_to_tr(postproc_path, tasks=ok_task):
                 json_file_with_physio_info = pickle.load(opener)
             rr_intervals = json_file_with_physio_info["PPG_clean_rr_systole"]
             rr_intervals = nk.standardize(rr_intervals)
+            # +12 to adjust for padding
             data = pd.Series(
                 nk.signal_resample(rr_intervals, desired_length=int(nb_vol + 12))
             )

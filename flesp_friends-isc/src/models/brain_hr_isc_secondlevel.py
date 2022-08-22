@@ -23,10 +23,7 @@ brain_mask = io.load_boolean_mask(mask_name)
 
 
 def create_model_input(
-    isc_path,
-    seg_len,
-    pairwise=False,
-    threshold=None,
+    isc_path, seg_len, pairwise=False, threshold=None,
 ):
     """Build data dictionaries."""
     logger = logging.getLogger(__name__)
@@ -45,12 +42,14 @@ def create_model_input(
     brain_isc_dict = {}
     hr_isc_dict = {}
     for sub in subjects:
-        logger.info(f"Creating model input for {sub}") 
+        logger.info(f"Creating model input for {sub}")
         i = subjects.index(sub)
         sub_hr_coeffs = hr_coeffs.iloc[i].to_frame().T
         if threshold is not None:
             logger.info(f"applying threshold: {threshold}")
-            sub_hr_coeffs = sub_hr_coeffs.where(sub_hr_coeffs.values > threshold).dropna(axis=1)
+            sub_hr_coeffs = sub_hr_coeffs.where(
+                sub_hr_coeffs.values > threshold
+            ).dropna(axis=1)
         logger.info(sub_hr_coeffs)
         hr_brain_segment_list = []
         segments_to_remove = []
@@ -59,8 +58,10 @@ def create_model_input(
         for directory in sorted(glob.glob(f"{isc_path}{seg_len}/*")):
 
             task_name = os.path.split(directory)[1]
-            scan_segments_list = sorted(glob.glob((f"{isc_path}{seg_len}/{task_name}/{sub}*")))
-          
+            scan_segments_list = sorted(
+                glob.glob((f"{isc_path}{seg_len}/{task_name}/{sub}*"))
+            )
+
             # Make sure subject has proper files
             if scan_segments_list == []:
                 logger.info(f"no file for {sub} in {task_name}")
@@ -98,13 +99,16 @@ def create_model_input(
         )
     return brain_isc_dict, hr_isc_dict
 
+
 @click.command()
 @click.argument("isc_path", type=click.Path(exists=False))
 @click.argument("out_dir", type=click.Path(exists=True))
 @click.option("--seg_len", type=str)
 @click.option("--pairwise", type=bool)
 @click.option("--threshold", type=float)
-def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False, threshold=None):
+def compute_model_contrast(
+    isc_path, out_dir, seg_len="30", pairwise=False, threshold=None
+):
     """Compute and save HR-ISC regressed Brain-ISC maps"""
     logger = logging.getLogger(__name__)
     subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
@@ -113,7 +117,7 @@ def compute_model_contrast(isc_path, out_dir, seg_len="30", pairwise=False, thre
         fname = "pw_isc_hr_coeffs-seg"
         map_name = "pw_segments"
         if threshold is not None:
-            map_name += f'_threshold{str(threshold)}'
+            map_name += f"_threshold{str(threshold)}"
         pairs = []
         for pair in itertools.combinations(subjects, 2):
             pairs.append(pair[0] + "-" + pair[1])
