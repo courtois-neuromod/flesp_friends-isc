@@ -64,7 +64,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
                 smoothing_fwhm=fwhm,
             )
             cleaned = maskers.fit_transform(bold, confounds=conf[0])
-            masked_imgs.append(maskers.inverse_transform(cleaned))
+            masked_imgs.append(cleaned)
     # individual anatomical mask subject-wise
     else:
         masked_imgs = []

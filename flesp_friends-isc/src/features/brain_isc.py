@@ -9,7 +9,6 @@ import numpy as np
 from brainiak.isc import isc, isfc
 from brainiak import image, io
 import nibabel as nib
-from nilearn.maskers import NiftiLabelsMasker
 
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
 
@@ -165,19 +164,17 @@ def map_isc(
         # Parcel space or not
         if roi is True:
             logger.info("Loading ROIs data")
-            bold_imgs = []
             for fn in files:
-                timeserie = io.load_images(fn)
-                bold_imgs.append(timeserie)
+                bold_imgs.append(nib.load(fn)
 
         # here we render in voxel space
         # Option to segment run in smaller windows
-        if slices is True:
+        elif slices is True:
             logger.info(f"Segmenting in slices of length {lng} TRs")
             masked_imgs = _slice_img_timeseries(files, lng)
 
         # mask the whole run
-        else:
+        elif roi is False and slices is False:
             images = io.load_images(files)
             masked_imgs = image.mask_images(images, brain_mask)
             logger.info("Masked images")
