@@ -53,31 +53,32 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
             legacy_format=False,
         )
         masked_imgs = []
+        maskers = NiftiMapsMasker(
+            maps_img=difumo.maps,
+            t_r=1.49,
+            standardize=False,
+            detrend=True,
+            high_pass=0.01,
+            low_pass=0.1,
+            smoothing_fwhm=fwhm,
+            verbose=
+        )
         for bold, conf in zip(scans, confounds):
-            maskers = NiftiMapsMasker(
-                maps_img=difumo.maps,
-                t_r=1.49,
-                standardize=False,
-                detrend=True,
-                high_pass=0.01,
-                low_pass=0.1,
-                smoothing_fwhm=fwhm,
-            )
             cleaned = maskers.fit_transform(bold, confounds=conf[0])
             masked_imgs.append(cleaned)
     # individual anatomical mask subject-wise
     else:
         masked_imgs = []
+        masker = NiftiMasker(
+            mask_img=mask,
+            t_r=1.49,
+            standardize=False,
+            detrend=True,
+            high_pass=0.01,
+            low_pass=0.1,
+            smoothing_fwhm=fwhm,
+        )
         for mask, bold, conf in zip(masks, scans, confounds):
-            masker = NiftiMasker(
-                mask_img=mask,
-                t_r=1.49,
-                standardize=False,
-                detrend=True,
-                high_pass=0.01,
-                low_pass=0.1,
-                smoothing_fwhm=fwhm,
-            )
             cleaned = masker.fit_transform(bold, confounds=conf[0])
             print(f"Fitted {os.path.basename(bold)}")
             masked_imgs.append(masker.inverse_transform(cleaned))
@@ -208,7 +209,7 @@ def main(input_filepath, output_filepath, roi=False):
     nifti_names, mask_names = create_data_dictionary(data_dir, verbose=True)
     episodes = list(
         pd.read_csv(f"{project_dir}/episodes.csv", delimiter=",", header=None).iloc[
-            45:, 0
+            :, 0
         ]
     )
     logger.info(f"Iterating through episodes : {episodes[:5]}...")
