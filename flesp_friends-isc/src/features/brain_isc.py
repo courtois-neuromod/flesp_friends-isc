@@ -147,7 +147,10 @@ def map_isc(
     for idx_task, task in enumerate(sorted(tasks)[110:]):
         task = task[-13:-1]
         logger.info("Importing data")
-        files = sorted(glob.glob(f"{postproc_path}/{task}/*.nii.gz*"))
+        if roi is True:
+            files = sorted(glob.glob(f"{postproc_path}/{task}/*.npy*"))
+        else:
+            files = sorted(glob.glob(f"{postproc_path}/{task}/*.nii.gz*"))
 
         if drop is None:
             logger.info("Considering all subjects for ISCs")
@@ -165,7 +168,7 @@ def map_isc(
         if roi is True:
             logger.info("Loading ROIs data")
             for fn in files:
-                bold_imgs.append(nib.load(fn)
+                bold_imgs.append(np.load(fn))
 
         # here we render in voxel space
         # Option to segment run in smaller windows

@@ -48,7 +48,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
     # Derive ROIs signal
     elif roi is True:
         difumo = fetch_atlas_difumo(
-            dimension=1024,
+            dimension=256,
             resolution_mm=2,
             legacy_format=False,
         )
@@ -175,18 +175,24 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm, roi):
 
     tmpl = f"space-MNI152NLin2009cAsym_desc-fwhm{fwhm}"
     if roi is True:
-        tmpl = "difumo64"
+        tmpl = "difumo256"
 
     del confs
     for i, img in enumerate(masked_images):
         sub = os.path.basename(fnames[i])[:6]
-        postproc_fname = str(f"{task_name}/{sub}" f"_{task_name}_{tmpl}.nii.gz")
+        postproc_fname = str(f"{task_name}/{sub}_{task_name}_{tmpl}.nii.gz")
         fn = os.path.join(f"{output_filepath}", postproc_fname)
         try:
+            postproc_fname = str(f"{task_name}/{sub}_{task_name}_{tmpl}.nii.gz")
+            fn = os.path.join(f"{output_filepath}", postproc_fname)
             nib.save(img, fn)
         except FileNotFoundError:
             os.mkdir(f"{output_filepath}/{task_name}")
             nib.save(img, fn)
+        except AttributeError:
+            postproc_fname = str(f"{task_name}/{sub}_{task_name}_{tmpl}.npy")
+            fn = os.path.join(f"{output_filepath}", postproc_fname)
+            np.save(fn, img)
         print(f"Saved {sub}, {task_name} under: {fn}")
     return postproc_fname
 
