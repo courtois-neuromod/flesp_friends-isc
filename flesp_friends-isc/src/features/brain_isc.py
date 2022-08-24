@@ -59,18 +59,19 @@ def _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
         isc_vol = np.zeros(brain_nii.shape)
         # iterate through segments
         for idx, isc_seg in enumerate(isc_imgs):
-            # Map the ISC data for each participant into 3d space
-            isc_vol[coords] = isc_seg[n, :]
-            # make a nii image of the isc map
-            isc_nifti = nib.Nifti1Image(isc_vol, brain_nii.affine, brain_nii.header)
-            # Save the ISC data as a volume
-            if not os.path.exists(f"{isc_map_path}/{task}"):
-                os.mkdir(f"{isc_map_path}/{task}")
-
             if roi is True:
-                fn = f"{sub[:6]}_{task}seg{idx:02d}ROI{kind}ISC.nii.gz"
-                nib.save(isc_nifti, f"{isc_map_path}/{task}/{fn}")
+                fn = f"{sub[:6]}_{task}seg{idx:02d}ROI{kind}ISC.npy"
+                np.save(isc[n, :], f"{isc_map_path}/{task}/{fn}")
+                continue
             else:
+                # Map the ISC data for each participant into 3d space
+                isc_vol[coords] = isc_seg[n, :]
+                # make a nii image of the isc map
+                isc_nifti = nib.Nifti1Image(isc_vol, brain_nii.affine, brain_nii.header)
+                # Save the ISC data as a volume
+                if not os.path.exists(f"{isc_map_path}/{task}"):
+                    os.mkdir(f"{isc_map_path}/{task}")
+
                 fn = f"{sub[:6]}_{task}seg{idx:02d}_{kind}ISC.nii.gz"
 
                 nib.save(isc_nifti, f"{isc_map_path}/{task}/{fn}")
@@ -144,11 +145,11 @@ def map_isc(
     tasks = glob.glob(f"{postproc_path}/*/")
 
     # walks subdirs with taks name (task-s01-e01a)
-    for idx_task, task in enumerate(sorted(tasks)[110:]):
+    for idx_task, task in enumerate(sorted(tasks)):
         task = task[-13:-1]
         logger.info("Importing data")
         if roi is True:
-            files = sorted(glob.glob(f"{postproc_path}/{task}/*.npy*"))
+            files = sorted(glob.glob(f"{postproc_path}/{task}/*.npy"))
         else:
             files = sorted(glob.glob(f"{postproc_path}/{task}/*.nii.gz*"))
 
