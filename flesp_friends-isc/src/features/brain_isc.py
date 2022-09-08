@@ -61,7 +61,11 @@ def _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
         for idx, isc_seg in enumerate(isc_imgs):
             if roi is True:
                 fn = f"{sub[:6]}_{task}seg{idx:02d}ROI{kind}ISC.npy"
-                np.save(isc[n, :], f"{isc_map_path}/{task}/{fn}")
+                try:
+                    np.save(f"{isc_map_path}/{task}/{fn}", isc_seg[n, :])
+                except FileNotFoundError:
+                    os.mkdir(f"{isc_map_path}/{task}/")
+                    np.save(f"{isc_map_path}/{task}/{fn}", isc_seg[n, :])
                 continue
             else:
                 # Map the ISC data for each participant into 3d space
@@ -77,7 +81,7 @@ def _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
                 nib.save(isc_nifti, f"{isc_map_path}/{task}/{fn}")
 
 
-def _slice_img_timeseries(files, lng, affine=brain_nii.affine):
+def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False):
     """
     Slice 4D timeseries.
 
@@ -88,8 +92,11 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine):
 
     # Fetch images
     for i, processed in enumerate(files):
-        img = nib.load(processed)
-        timeserie = img.get_fdata()
+        if roi is False:
+            img = nib.load(processed)
+            timeserie = img.get_fdata()
+        else:
+            timeserie = processed
         imgs_sub = []
         if lng == 100:
             range_step = range(0, timeserie.shape[3] - lng, lng / 2)
@@ -98,7 +105,10 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine):
         # slice them subject-wise
         for idx in range_step:
             slx = slice(0 + idx, lng + idx)
-            sliced = nib.Nifti1Image(timeserie[:, :, :, slx], affine)
+            if roi is False:
+                sliced = nib.Nifti1Image(timeserie[:, :, :, slx], affine)
+            else:
+                sliced = timeserie[:, :, :, slx]
             imgs_sub.append(sliced)
         sub_sliced[i] = imgs_sub
     # start by first segment in each subject and iterate
@@ -107,8 +117,11 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine):
         # assemble a temporary list for each segment containing all sub
         for sub in sub_sliced:
             ls_imgs.append(sub_sliced[sub][segment])
-        # Mask every subject's segment and append in list
-        masked_imgs.append(image.mask_images(ls_imgs, brain_mask))
+        if roi is False:
+            # Mask every subject's segment and append in list
+            masked_imgs.append(image.mask_images(ls_imgs, brain_mask))
+        else:
+            masked_imgs = ls_imgs
     del sub_sliced
 
     return masked_imgs
@@ -149,7 +162,7 @@ def map_isc(
         task = task[-13:-1]
         logger.info("Importing data")
         if roi is True:
-            files = sorted(glob.glob(f"{postproc_path}/{task}/*.npy"))
+            files = sorted(glob.glob(f"{postproc_path}/{task}/*256.npy"))
         else:
             files = sorted(glob.glob(f"{postproc_path}/{task}/*.nii.gz*"))
 
@@ -168,12 +181,15 @@ def map_isc(
         # Parcel space or not
         if roi is True:
             logger.info("Loading ROIs data")
+            bold_imgs = []
             for fn in files:
                 bold_imgs.append(np.load(fn))
+            if slice is True:
+                masked_imgs = _slice_img_timeseries(bold_imgs, lng, roi=roi)
 
         # here we render in voxel space
         # Option to segment run in smaller windows
-        elif slices is True:
+        elif slices is True and roi is False:
             logger.info(f"Segmenting in slices of length {lng} TRs")
             masked_imgs = _slice_img_timeseries(files, lng)
 
@@ -215,12 +231,17 @@ def map_isc(
             # workflow for sliced timeseries
             else:
                 isc_imgs = []
-                for niimg_obj in masked_imgs:
-                    bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
-                        niimg_obj, len(files)
-                    )
-                    isc_seg = isc(bold_imgs, pairwise=pairwise)
-                    isc_imgs.append(isc_seg)
+                if roi is False:
+                    for niimg_obj in masked_imgs:
+                        bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
+                            niimg_obj, len(files)
+                        )
+                        isc_seg = isc(bold_imgs, pairwise=pairwise)
+                        isc_imgs.append(isc_seg)
+                else:
+                    for bold_ts in masked_imgs:
+                        isc_seg = isc(bold_ts, pairwise=pairwise)
+                        isc_imgs.append(isc_seg)
         elif kind == "spatial":
             isc_imgs = isfc(bold_imgs, pairwise=pairwise)
         else:
@@ -231,7 +252,7 @@ def map_isc(
         if pairwise is False:
             _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi)
             # free up memory
-            del masked_imgs, isc_imgs
+            del bold_imgs, isc_imgs
 
         # if it's not pairwise
         else:
