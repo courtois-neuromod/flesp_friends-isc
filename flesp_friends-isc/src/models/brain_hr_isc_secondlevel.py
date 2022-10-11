@@ -50,18 +50,14 @@ def create_model_input(
             sub_hr_coeffs = sub_hr_coeffs.where(
                 sub_hr_coeffs.values > threshold
             ).dropna(axis=1)
-        logger.info(sub_hr_coeffs)
         hr_brain_segment_list = []
         segments_to_remove = []
-        second_level_input = []
-
-        for directory in sorted(glob.glob(f"{isc_path}{seg_len}/*")):
-
+        second_level_input = [] 
+        for directory in sorted(glob.glob(f"{isc_path}{seg_len}/*"))[60:]: 
             task_name = os.path.split(directory)[1]
             scan_segments_list = sorted(
                 glob.glob((f"{isc_path}{seg_len}/{task_name}/{sub}*"))
-            )
-
+            ) 
             # Make sure subject has proper files
             if scan_segments_list == []:
                 logger.info(f"no file for {sub} in {task_name}")
@@ -115,7 +111,7 @@ def compute_model_contrast(
     # defining pairs if not subjects
     if pairwise is True:
         fname = "pw_isc_hr_coeffs-seg"
-        map_name = "pw_segments"
+        map_name = "splitb_pw_segments"
         if threshold is not None:
             map_name += f"_threshold{str(threshold)}"
         pairs = []
@@ -143,11 +139,11 @@ def compute_model_contrast(
         design_matrix = make_second_level_design_matrix(
             hr_isc_dict[sub]["subject_label"], hr_isc_dict[sub]
         )
-        if os.path.exists(f"{out_dir}/{map_name}{seg_len}TRs") is False:
-            os.mkdir(f"{out_dir}/{map_name}{seg_len}TRs")
+        if os.path.exists(f"{out_dir}/{map_name}_{seg_len}TRs") is False:
+            os.mkdir(f"{out_dir}/{map_name}_{seg_len}TRs")
         plotting.plot_design_matrix(
             design_matrix,
-            output_file=f"{out_dir}/{map_name}{seg_len}TRs/{sub}_design-matrix.png",
+            output_file=f"{out_dir}/{map_name}_{seg_len}TRs/{sub}_design-matrix.png",
         )
         logger.info("created design matrix")
         model = SecondLevelModel(smoothing_fwhm=6).fit(
@@ -195,14 +191,14 @@ def compute_model_contrast(
 
         nib.save(
             thresholded_map,
-            f"{out_dir}/{map_name}{seg_len}TRs/{sub}_HR-Brain-ISC_zmap.nii.gz",
+            f"{out_dir}/{map_name}_{seg_len}TRs/{sub}_HR-Brain-ISC_zmap.nii.gz",
         )
 
         view.save_as_html(
-            f"{out_dir}/{map_name}{seg_len}TRs/{sub}_HR-Brain-ISC-fpr_surface_plot.html"
+            f"{out_dir}/{map_name}_{seg_len}TRs/{sub}_HR-Brain-ISC-fpr_surface_plot.html"
         )
         view_fdr.save_as_html(
-            f"{out_dir}/{map_name}{seg_len}TRs/{sub}_HR-Brain-ISC-fdr_surface_plot.html"
+            f"{out_dir}/{map_name}_{seg_len}TRs/{sub}_HR-Brain-ISC-fdr_surface_plot.html"
         )
         logger.info(f"Saved stat map for {sub}")
 
@@ -212,7 +208,7 @@ def compute_model_contrast(
     max_eff_size["Variance_range"] = variance
     max_eff_size["Effect_variance_coords"] = coords_var
     max_eff_size.to_csv(
-        f"{out_dir}/{map_name}{seg_len}TRs/effect_sizes-coords_and_variance_range.csv"
+        f"{out_dir}/{map_name}_{seg_len}TRs/effect_sizes-coords_and_variance_range.csv"
     )
     logger.info(f"Done workflow \n _______________________")
 
