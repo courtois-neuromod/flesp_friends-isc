@@ -305,7 +305,7 @@ def plot_axial_slice(
             average,
             threshold=0.2,
             vmax=1,
-            cmap='magma'
+            cmap="magma",
             symmetric_cbar=False,
             display_mode="z",
             cut_coords=[-24, -6, 3, 25, 37, 51, 65],
