@@ -19,13 +19,52 @@ episodes = glob.glob("/scratch/flesp/data/pw_isc-segments30/*/")
 tasks = []
 for task in sorted(episodes):
     tasks.append(task[-13:-1])
-tasks = tasks[-22:]
+
+
+def _list_averaging_subjectwise(data_dir, subject, kind):
+    """
+    list averaged isc volumes
+    """
+    logger = logging.getLogger(__name__)
+    logger.info(f"averaging all tasks from {subject}")
+    isc_files = sorted(glob.glob(f"{data_dir}/*/{subject}*.nii.gz"))
+    isc_files = fnmatch.filter(isc_files, f"*{kind}*")
+    isc_volumes = [image.mean_img(isc_files)]
+    logger.info("Averaged BOLD images")
+
+    return isc_volumes
+
+
+def _list_averaging_taskwise(data_dir, tasks, subject, kind, slices):
+    """
+    list averaged isc volumes
+    """
+    logger = logging.getLogger(__name__)
+    # iterate for a given sub
+    for task in tasks:
+        isc_volumes = []
+        logger.info(f"{subject} | {task} ")
+        isc_files = sorted(glob.glob(f"{data_dir}/{task}/{subject}*.nii.gz"))
+        isc_files = fnmatch.filter(isc_files, f"*{kind}*")
+        try:
+            if slices is True:
+                for fn in isc_files:
+                    isc_volumes.append(image.mean_img(fn))
+            else:
+                isc_volumes = [image.mean_img(isc_files)]
+        except StopIteration:
+            logger.info("No ISC map for this episode segment")
+            continue
+
+        logger.info("Averaged BOLD images")
+    return isc_volumes
 
 
 @click.command()
 @click.argument("data_dir", type=click.Path(exists=True))
 @click.argument("figures_dir", type=click.Path(exists=True))
 @click.option("--kind", type=str)
+@click.option("--average", type=str)
 @click.option("--slices", type=bool)
 @click.option("--pairwise", type=bool)
 def surface_isc_plots(
@@ -38,6 +77,7 @@ def surface_isc_plots(
     hemi="left",
     threshold=0.2,
     vmax=1.0,
+    average="subject",
     slices=False,
     pairwise=False,
 ):
@@ -61,75 +101,84 @@ def surface_isc_plots(
         for pair in itertools.combinations(subjects, 2):
             pairs.append(pair[0] + "-" + pair[1])
         subjects = pairs
-    for subject in subjects:
-        for view, task in itertools.product(views, tasks):
-            isc_volumes = []
-            logger.info(f"{subject} | {task} | {view}")
-            isc_files = sorted(glob.glob(f"{data_dir}/{task}/{subject}*.nii.gz"))
-            isc_files = fnmatch.filter(isc_files, f"*{kind}*")
-            try:
-                if slices is True:
-                    for fn in isc_files:
-                        isc_volumes.append(image.mean_img(fn))
-                else:
-                    isc_volumes = [image.mean_img(isc_files)]
-            except StopIteration:
-                logger.info("No ISC map for this episode segment")
-                continue
-
-            logger.info("Averaged BOLD images")
-            # plot left hemisphere
-            for idx, average_isc in enumerate(isc_volumes):
-                if slices:
-                    fig_title = f"{subject} {task} segment {idx:02d}"
-                else:
-                    fig_title = f"{subject} {task}"
-                texture = surface.vol_to_surf(average_isc, fsaverage.pial_left)
-                plotting.plot_surf_stat_map(
-                    fsaverage.pial_left,
-                    texture,
-                    hemi=hemi,
-                    colorbar=True,
-                    threshold=threshold,
-                    vmax=vmax,
-                    bg_map=fsaverage.sulc_left,
-                    view=view,
-                    title=fig_title,
-                )
-                fn = str(
+    for subject, view in itertools.product(subjects, views):
+        # list isc volumes by subject or subject/task
+        if average != "subject":
+            isc_volumes = _list_averaging_taskwise(
+                data_dir, tasks, subject, kind, slices
+            )
+        else:
+            isc_volumes = _list_averaging_subjectwise(data_dir, subject, kind)
+        # plot left hemisphere
+        for idx, average_isc in enumerate(isc_volumes):
+            if slices:
+                fig_title = f"{subject} {task} segment {idx:02d}"
+            elif average != "subject":
+                fig_title = f"{subject} {task}"
+                fn_left = str(
                     f"{figures_dir}/{task}/"
                     f"left_{view}_surfplot_{kind}"
                     f"ISC_on_{task}seg{idx:02d}_{subject}.png"
                 )
-                if os.path.exists(fn):
-                    os.remove(fn)
-                try:
-                    plt.savefig(fn, bbox_inches="tight")
-                except FileNotFoundError:
-                    logger.info(f"Creating path for {task}")
-                    os.mkdir(f"{figures_dir}/{task}/")
-                    plt.savefig(fn, bbox_inches="tight")
-                # plot right hemisphere
-                texture = surface.vol_to_surf(average_isc, fsaverage.pial_right)
-                plotting.plot_surf_stat_map(
-                    fsaverage.pial_right,
-                    texture,
-                    hemi=hemi,
-                    colorbar=True,
-                    threshold=threshold,
-                    vmax=vmax,
-                    bg_map=fsaverage.sulc_right,
-                    view=view,
-                    title=fig_title,
-                )
-                plt.savefig(
+                fn_right = str(
                     f"{figures_dir}/{task}/"
                     f"right_{view}_surfplot_{kind}"
-                    f"ISC_on_{task}seg{idx:02d}_{subject}.png",
-                    bbox_inches="tight",
+                    f"ISC_on_{task}seg{idx:02d}_{subject}.png"
                 )
-                del texture
-                plt.close("all")
+            else:
+                fig_title = ""
+                fn_left = str(
+                    f"{figures_dir}/"
+                    f"left_{view}_surfplot_{kind}"
+                    f"ISC_on_all_{subject}.png"
+                )
+                fn_right = str(
+                    f"{figures_dir}/"
+                    f"right_{view}_surfplot_{kind}"
+                    f"ISC_on_all_{subject}.png"
+                )
+            texture = surface.vol_to_surf(average_isc, fsaverage.pial_left)
+            plotting.plot_surf_stat_map(
+                fsaverage.pial_left,
+                texture,
+                hemi=hemi,
+                colorbar=True,
+                cmap="magma",
+                threshold=threshold,
+                vmax=vmax,
+                bg_map=fsaverage.sulc_left,
+                view=view,
+                title=fig_title,
+            )
+
+            # plot right hemisphere
+            texture = surface.vol_to_surf(average_isc, fsaverage.pial_right)
+            plotting.plot_surf_stat_map(
+                fsaverage.pial_right,
+                texture,
+                hemi=hemi,
+                colorbar=True,
+                cmap="magma"
+                threshold=threshold,
+                vmax=vmax,
+                bg_map=fsaverage.sulc_right,
+                view=view,
+                title=fig_title,
+            )
+            if os.path.exists(fn_left):
+                os.remove(fn_left)
+            try:
+                plt.savefig(fn, bbox_inches="tight")
+            except FileNotFoundError:
+                logger.info(f"Creating path for {task}")
+                os.mkdir(f"{figures_dir}/{task}/")
+                plt.savefig(fn_left, bbox_inches="tight")
+            plt.savefig(
+                fn_right,
+                bbox_inches="tight",
+            )
+            del texture
+            plt.close("all")
 
 
 @click.command()
@@ -190,7 +239,12 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind="temporal"):
 @click.option("--kind", type=str)
 @click.option("--slices", type=bool)
 def plot_axial_slice(
-    data_dir, figures_dir, tasks=tasks, taskwise=False, kind="temporal", slices=False,
+    data_dir,
+    figures_dir,
+    tasks=tasks,
+    taskwise=False,
+    kind="temporal",
+    slices=False,
 ):
     """
     Plot axial slice.
@@ -251,10 +305,10 @@ def plot_axial_slice(
             average,
             threshold=0.2,
             vmax=1,
+            cmap='magma'
             symmetric_cbar=False,
             display_mode="z",
             cut_coords=[-24, -6, 3, 25, 37, 51, 65],
-            title=f"{kind} ISC averaged across episodes",
         )
         plt.savefig(f"{figures_dir}/{kind}ISC_on_All.png", bbox_inches="tight")
 
