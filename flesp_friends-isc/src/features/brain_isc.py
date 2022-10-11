@@ -20,7 +20,7 @@ brain_nii = nib.load(mask_name)
 coords = np.where(brain_mask)
 
 
-def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files):
+def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
     """ """
     logger = logging.getLogger(__name__)
     # save ISC maps per pairs of subject
@@ -32,19 +32,27 @@ def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files):
                 _, sub_b = os.path.split(files[m])
                 logger.info(f"Segment {idx_seg:02d} | {sub_a[:6]} | {sub_b[:6]}")
                 pair = f"{sub_a[:6]}" + f"-{sub_b[:6]}"
-                # Make the ISC output a volume
-                isc_vol = np.zeros(brain_nii.shape)
-                # Map the ISC data for the first participant into brain space
-                isc_vol[coords] = isc_seg[counter, :]
-                # make a nii image of the isc map
-                isc_nifti = nib.Nifti1Image(isc_vol, brain_nii.affine, brain_nii.header)
-                if not os.path.exists(f"{isc_map_path}/{task}"):
-                    os.mkdir(f"{isc_map_path}/{task}")
+                if roi is True:
+                    fn = f"{pair}_{task}seg{idx_seg:02d}ROI{kind}ISC.npy"
+                    try:
+                        np.save(f"{isc_map_path}/{task}/{fn}", isc_seg[counter, :])
+                    except FileNotFoundError:
+                        os.mkdir(f"{isc_map_path}/{task}/")
+                        np.save(f"{isc_map_path}/{task}/{fn}", isc_seg[counter, :])
+                else:
+                    # Make the ISC output a volume
+                    isc_vol = np.zeros(brain_nii.shape)
+                    # Map the ISC data for the first participant into brain space
+                    isc_vol[coords] = isc_seg[counter, :]
+                    # make a nii image of the isc map
+                    isc_nifti = nib.Nifti1Image(isc_vol, brain_nii.affine, brain_nii.header)
+                    if not os.path.exists(f"{isc_map_path}/{task}"):
+                        os.mkdir(f"{isc_map_path}/{task}")
 
-                nib.save(
-                    isc_nifti,
-                    f"{isc_map_path}/{task}/{pair}_{task}seg{idx_seg:02d}_{kind}ISC.nii.gz",
-                )
+                    nib.save(
+                        isc_nifti,
+                        f"{isc_map_path}/{task}/{pair}_{task}seg{idx_seg:02d}_{kind}ISC.nii.gz",
+                    )
                 counter += 1
 
 
@@ -95,21 +103,25 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False):
         if roi is False:
             img = nib.load(processed)
             timeserie = img.get_fdata()
+            timeserie_len = timeserie.shape[3]
         else:
             timeserie = processed
+            timeserie_len = int(len(timeserie))
         imgs_sub = []
         if lng == 100:
-            range_step = range(0, timeserie.shape[3] - lng, lng / 2)
+            range_step = range(0, int(timeserie_len - lng), int(lng / 2))
         else:
-            range_step = range(0, timeserie.shape[3] - lng, lng)
+            range_step = range(0, int(timeserie_len - lng), lng)
         # slice them subject-wise
         for idx in range_step:
             slx = slice(0 + idx, lng + idx)
             if roi is False:
                 sliced = nib.Nifti1Image(timeserie[:, :, :, slx], affine)
             else:
-                sliced = timeserie[:, :, :, slx]
+                sliced = timeserie[slx,:]
+            # append sliced timeserie from 1 sub
             imgs_sub.append(sliced)
+        # associate to key in dict for 1 sub
         sub_sliced[i] = imgs_sub
     # start by first segment in each subject and iterate
     for segment in range(len(sub_sliced[0])):
@@ -121,7 +133,8 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False):
             # Mask every subject's segment and append in list
             masked_imgs.append(image.mask_images(ls_imgs, brain_mask))
         else:
-            masked_imgs = ls_imgs
+            masked_imgs.append(ls_imgs)
+
     del sub_sliced
 
     return masked_imgs
@@ -178,13 +191,17 @@ def map_isc(
             _, fn = os.path.split(fn)
             logger.info(fn[:6])
 
+        # do not compute if less than totality of considered subs
+        if len(files) != 6:
+            logger.info(f"{task} is left out because only {len(files)} files accessible")
+            continue
         # Parcel space or not
         if roi is True:
             logger.info("Loading ROIs data")
             bold_imgs = []
             for fn in files:
                 bold_imgs.append(np.load(fn))
-            if slice is True:
+            if slices is True:
                 masked_imgs = _slice_img_timeseries(bold_imgs, lng, roi=roi)
 
         # here we render in voxel space
@@ -239,7 +256,7 @@ def map_isc(
                         isc_seg = isc(bold_imgs, pairwise=pairwise)
                         isc_imgs.append(isc_seg)
                 else:
-                    for bold_ts in masked_imgs:
+                    for bold_ts in masked_imgs:                        
                         isc_seg = isc(bold_ts, pairwise=pairwise)
                         isc_imgs.append(isc_seg)
         elif kind == "spatial":
@@ -256,7 +273,7 @@ def map_isc(
 
         # if it's not pairwise
         else:
-            _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files)
+            _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files, roi)
             # free up memory
             del bold_imgs, isc_imgs
         logger.info(

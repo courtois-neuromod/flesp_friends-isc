@@ -61,7 +61,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
             high_pass=0.01,
             low_pass=0.1,
             smoothing_fwhm=fwhm,
-            verbose=
+            verbose=True,
         )
         for bold, conf in zip(scans, confounds):
             cleaned = maskers.fit_transform(bold, confounds=conf[0])
@@ -69,16 +69,18 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
     # individual anatomical mask subject-wise
     else:
         masked_imgs = []
-        masker = NiftiMasker(
-            mask_img=mask,
-            t_r=1.49,
-            standardize=False,
-            detrend=True,
-            high_pass=0.01,
-            low_pass=0.1,
-            smoothing_fwhm=fwhm,
-        )
         for mask, bold, conf in zip(masks, scans, confounds):
+            masker = NiftiMasker(
+                mask_img=mask,
+                t_r=1.49,
+                standardize=False,
+                detrend=True,
+                high_pass=0.01,
+                low_pass=0.1,
+                smoothing_fwhm=fwhm,
+                verbose=True,
+            )
+
             cleaned = masker.fit_transform(bold, confounds=conf[0])
             print(f"Fitted {os.path.basename(bold)}")
             masked_imgs.append(masker.inverse_transform(cleaned))
@@ -218,6 +220,8 @@ def main(input_filepath, output_filepath, roi=False):
             :, 0
         ]
     )
+    if roi is True:
+        output_filepath = f'{output_filepath}-roi'
     logger.info(f"Iterating through episodes : {episodes[:5]}...")
     # iterate through episodes
     for task_name in episodes:
@@ -227,7 +231,7 @@ def main(input_filepath, output_filepath, roi=False):
         masks = fnmatch.filter(mask_names, f"*{task_name}*")
         fnames.sort()
         masks.sort()
-        process_episodewise(fnames, output_filepath, task_name, masks, fwhm=6, roi=True)
+        process_episodewise(fnames, output_filepath, task_name, masks, fwhm=6, roi=roi)
         logger.info(
             f"Done processing : {task_name} \n" "---------------------------------"
         )
