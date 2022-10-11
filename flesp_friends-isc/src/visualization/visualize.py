@@ -262,7 +262,7 @@ def plot_axial_slice(
     if kind not in ["spatial", "temporal"]:
         err_msg = "Unrecognized ISC type! Must be spatial or temporal"
         raise ValueError(err_msg)
-    if taskwise:
+    if taskwise is True:
         logger.info("Taskwise visualization")
         for task in tasks:
             files = glob.glob(f"{data_dir}/{task}/*.nii.gz")
