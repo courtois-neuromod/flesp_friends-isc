@@ -74,7 +74,7 @@ def mosaic_surface_isc_plots(
     kind="temporal",
     views=["lateral", "medial"],
     hemi=["left", "right"],
-    threshold=0.2,
+    threshold=0.15,
     vmax=1.0,
     average="subject",
     slices=False,
@@ -100,7 +100,7 @@ def mosaic_surface_isc_plots(
         for pair in itertools.combinations(subjects, 2):
             pairs.append(pair[0] + "-" + pair[1])
         subjects = pairs
-    for subject, view in itertools.product(subjects, views):
+    for subject in subjects:
         # list isc volumes by subject or subject/task
         if average != "subject":
             isc_volumes = _list_averaging_taskwise(
@@ -161,7 +161,7 @@ def surface_isc_plots(
     kind="temporal",
     views=["lateral", "medial"],
     hemi=["left", "right"],
-    threshold=0.2,
+    threshold=0.15,
     vmax=1.0,
     average="subject",
     slices=False,
@@ -187,7 +187,7 @@ def surface_isc_plots(
         for pair in itertools.combinations(subjects, 2):
             pairs.append(pair[0] + "-" + pair[1])
         subjects = pairs
-    for subject in subjects:
+    for subject, view in itertools.product(subjects, views):
         # list isc volumes by subject or subject/task
         if average != "subject":
             isc_volumes = _list_averaging_taskwise(
