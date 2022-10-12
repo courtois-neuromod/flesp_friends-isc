@@ -14,7 +14,7 @@ import fnmatch
 fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_mask = nib.load(mask_name)
-subjects = ["sub-03", "sub-06"]
+subjects = ["sub-01","sub-02","sub-03","sub-04","sub-05", "sub-06"]
 episodes = glob.glob("/scratch/flesp/data/pw_isc-segments30/*/")
 tasks = []
 for task in sorted(episodes):
@@ -29,7 +29,7 @@ def _list_averaging_subjectwise(data_dir, subject, kind):
     logger.info(f"averaging all tasks from {subject}")
     isc_files = sorted(glob.glob(f"{data_dir}/*/{subject}*.nii.gz"))
     isc_files = fnmatch.filter(isc_files, f"*{kind}*")
-    isc_volumes = [image.mean_img(isc_files)]
+    isc_volumes = [image.mean_img(isc_files, verbose=5, n_jobs=-1)]
     logger.info("Averaged BOLD images")
 
     return isc_volumes
@@ -73,7 +73,7 @@ def surface_isc_plots(
     subjects=subjects,
     tasks=tasks,
     kind="temporal",
-    views=["lateral"],
+    views=["lateral", "medial"],
     hemi="left",
     threshold=0.2,
     vmax=1.0,
@@ -150,7 +150,15 @@ def surface_isc_plots(
                 view=view,
                 title=fig_title,
             )
-
+            if os.path.exists(fn_left):
+                os.remove(fn_left)
+            try:
+                plt.savefig(fn_left, bbox_inches="tight", dpi=300)
+            except FileNotFoundError:
+                logger.info(f"Creating path for {task}")
+                os.mkdir(f"{figures_dir}/{task}/")
+                plt.savefig(fn_left, bbox_inches="tight", dpi=300)
+            
             # plot right hemisphere
             texture = surface.vol_to_surf(average_isc, fsaverage.pial_right)
             plotting.plot_surf_stat_map(
@@ -158,24 +166,17 @@ def surface_isc_plots(
                 texture,
                 hemi=hemi,
                 colorbar=True,
-                cmap="magma"
+                cmap="magma",
                 threshold=threshold,
                 vmax=vmax,
                 bg_map=fsaverage.sulc_right,
                 view=view,
                 title=fig_title,
             )
-            if os.path.exists(fn_left):
-                os.remove(fn_left)
-            try:
-                plt.savefig(fn, bbox_inches="tight")
-            except FileNotFoundError:
-                logger.info(f"Creating path for {task}")
-                os.mkdir(f"{figures_dir}/{task}/")
-                plt.savefig(fn_left, bbox_inches="tight")
             plt.savefig(
                 fn_right,
                 bbox_inches="tight",
+                dpi=300,
             )
             del texture
             plt.close("all")
@@ -298,19 +299,22 @@ def plot_axial_slice(
     else:
         logger.info("All tasks averaging")
         files = glob.glob(f"{data_dir}/*/*.nii.gz")
-        average = image.mean_img(files)
+        average = image.mean_img(files, verbose=5, n_jobs=-1)
 
         # NOTE: threshold may need to be adjusted for each decoding task
         plotting.plot_stat_map(
             average,
             threshold=0.2,
+            vmin=0,
             vmax=1,
             cmap="magma",
-            symmetric_cbar=False,
+            draw_cross=True,
+            annotate=False,
+            symmetric_cbar=True,
             display_mode="z",
             cut_coords=[-24, -6, 3, 25, 37, 51, 65],
         )
-        plt.savefig(f"{figures_dir}/{kind}ISC_on_All.png", bbox_inches="tight")
+        plt.savefig(f"{figures_dir}/{kind}ISC_on_All.png", bbox_inches="tight", dpi=300)
 
 
 if __name__ == "__main__":
