@@ -11,10 +11,10 @@ import numpy as np
 import nibabel as nib
 import fnmatch
 
-fsaverage = fetch_surf_fsaverage()
+fsaverage = fetch_surf_fsaverage(mesh='fsaverage')
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_mask = nib.load(mask_name)
-subjects = ["sub-01","sub-02","sub-03","sub-04","sub-05", "sub-06"]
+subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
 episodes = glob.glob("/scratch/flesp/data/pw_isc-segments30/*/")
 tasks = []
 for task in sorted(episodes):
@@ -59,7 +59,6 @@ def _list_averaging_taskwise(data_dir, tasks, subject, kind, slices):
         logger.info("Averaged BOLD images")
     return isc_volumes
 
-
 @click.command()
 @click.argument("data_dir", type=click.Path(exists=True))
 @click.argument("figures_dir", type=click.Path(exists=True))
@@ -67,14 +66,14 @@ def _list_averaging_taskwise(data_dir, tasks, subject, kind, slices):
 @click.option("--average", type=str)
 @click.option("--slices", type=bool)
 @click.option("--pairwise", type=bool)
-def surface_isc_plots(
+def mosaic_surface_isc_plots(
     data_dir,
     figures_dir,
     subjects=subjects,
     tasks=tasks,
     kind="temporal",
     views=["lateral", "medial"],
-    hemi="left",
+    hemi=["left", "right"],
     threshold=0.2,
     vmax=1.0,
     average="subject",
@@ -102,6 +101,90 @@ def surface_isc_plots(
             pairs.append(pair[0] + "-" + pair[1])
         subjects = pairs
     for subject, view in itertools.product(subjects, views):
+        # list isc volumes by subject or subject/task
+        if average != "subject":
+            isc_volumes = _list_averaging_taskwise(
+                data_dir, tasks, subject, kind, slices
+            )
+        else:
+            isc_volumes = _list_averaging_subjectwise(data_dir, subject, kind)
+        # plot left hemisphere
+        for idx, average_isc in enumerate(isc_volumes):
+            if slices:
+                fig_title = f"{subject} {task} segment {idx:02d}"
+            elif average != "subject":
+                fig_title = f"{subject} {task}"
+                fn = str(
+                    f"{figures_dir}/{task}/"
+                    f"mosaic_surfplot_{kind}"
+                    f"ISC_on_{task}seg{idx:02d}_{subject}.png"
+                )
+            else:
+                fig_title = ""
+                fn = str(
+                    f"{figures_dir}/"
+                    f"mosaic_surfplot_{kind}"
+                    f"ISC_on_all_{subject}.png"
+                )
+            plotting.plot_img_on_surf(average_isc,
+                                      fsaverage,
+                                      views=views,
+                                      hemispheres=hemi,
+                                      vmax=vmax,
+                                      threshold=threshold,
+                                      cmap="magma")
+            if os.path.exists(fn):
+                os.remove(fn)
+            try:
+                plt.savefig(fn, bbox_inches="tight", dpi=300)
+            except FileNotFoundError:
+                logger.info(f"Creating path for {task}")
+                os.mkdir(f"{figures_dir}/{task}/")
+                plt.savefig(fn, bbox_inches="tight", dpi=300)
+            plt.close("all")
+
+@click.command()
+@click.argument("data_dir", type=click.Path(exists=True))
+@click.argument("figures_dir", type=click.Path(exists=True))
+@click.option("--kind", type=str)
+@click.option("--average", type=str)
+@click.option("--slices", type=bool)
+@click.option("--pairwise", type=bool)
+def surface_isc_plots(
+    data_dir,
+    figures_dir,
+    subjects=subjects,
+    tasks=tasks,
+    kind="temporal",
+    views=["lateral", "medial"],
+    hemi=["left", "right"],
+    threshold=0.2,
+    vmax=1.0,
+    average="subject",
+    slices=False,
+    pairwise=False,
+):
+    """
+    Plot surface subject-wise.
+
+    Parameters
+    ----------
+    subject : str
+        Subject identifier for which to generate ISC plots.
+    task: list
+        Tasks for which to generate ISC plots.
+    views : list
+        View for which to generate ISC plots. Accepted values are
+        ['lateral', 'medial', 'dorsal', 'ventral', 'anterior', 'posterior'].
+        Defaults to ['lateral', 'medial'].
+    """
+    logger = logging.getLogger(__name__)
+    if pairwise:
+        pairs = []
+        for pair in itertools.combinations(subjects, 2):
+            pairs.append(pair[0] + "-" + pair[1])
+        subjects = pairs
+    for subject in subjects:
         # list isc volumes by subject or subject/task
         if average != "subject":
             isc_volumes = _list_averaging_taskwise(
@@ -158,7 +241,7 @@ def surface_isc_plots(
                 logger.info(f"Creating path for {task}")
                 os.mkdir(f"{figures_dir}/{task}/")
                 plt.savefig(fn_left, bbox_inches="tight", dpi=300)
-            
+
             # plot right hemisphere
             texture = surface.vol_to_surf(average_isc, fsaverage.pial_right)
             plotting.plot_surf_stat_map(
@@ -321,6 +404,7 @@ if __name__ == "__main__":
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(level=logging.INFO, format=log_fmt)
+    mosaic_surface_isc_plots()
     surface_isc_plots()
     plot_corr_mtx()
     plot_axial_slice()
