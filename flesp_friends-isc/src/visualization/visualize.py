@@ -126,13 +126,16 @@ def mosaic_surface_isc_plots(
                     f"mosaic_surfplot_{kind}"
                     f"ISC_on_all_{subject}.png"
                 )
-            plotting.plot_img_on_surf(average_isc,
-                                      fsaverage,
-                                      views=views,
-                                      hemispheres=hemi,
-                                      vmax=vmax,
-                                      threshold=threshold,
-                                      cmap="magma")
+            plotting.plot_img_on_surf(
+                    average_isc,
+                    fsaverage,
+                    views=views,
+                    hemispheres=hemi,
+                    vmax=vmax,
+                    threshold=threshold,
+                    cmap="magma",
+                    cbar_vmin=0,
+                )
             if os.path.exists(fn):
                 os.remove(fn)
             try:
