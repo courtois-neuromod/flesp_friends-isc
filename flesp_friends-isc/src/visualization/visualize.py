@@ -95,7 +95,7 @@ def mosaic_surface_isc_plots(
         Defaults to ['lateral', 'medial'].
     """
     logger = logging.getLogger(__name__)
-    if pairwise:
+    if pairwise is True:
         pairs = []
         for pair in itertools.combinations(subjects, 2):
             pairs.append(pair[0] + "-" + pair[1])
@@ -126,15 +126,15 @@ def mosaic_surface_isc_plots(
                     f"mosaic_surfplot_{kind}"
                     f"ISC_on_all_{subject}.png"
                 )
-            plotting.plot_img_on_surf(
+            kw = {"cbar_vmin": 0}
+            plotting.plot_img_on_surf( 
                     average_isc,
                     fsaverage,
                     views=views,
                     hemispheres=hemi,
-                    vmax=vmax,
+                    vmax=vmax,      
                     threshold=threshold,
                     cmap="magma",
-                    cbar_vmin=0,
                 )
             if os.path.exists(fn):
                 os.remove(fn)
