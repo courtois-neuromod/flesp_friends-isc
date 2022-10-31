@@ -20,7 +20,18 @@ tasks = []
 for task in sorted(episodes):
     tasks.append(task[-13:-1])
 
+def _list_averaging_everything(data_dir, kind):
+    """
+    list averaged isc volumes
+    """
+    logger = logging.getLogger(__name__)
+    logger.info("averaging all tasks from all subs")
+    isc_files = sorted(glob.glob(f"{data_dir}/*/*.nii.gz"))
+    isc_files = fnmatch.filter(isc_files, f"*{kind}*")
+    isc_volumes = [image.mean_img(isc_files, verbose=5, n_jobs=-1)]
+    logger.info("Averaged BOLD images")
 
+    return isc_volumes
 def _list_averaging_subjectwise(data_dir, subject, kind):
     """
     list averaged isc volumes
@@ -103,34 +114,45 @@ def mosaic_surface_isc_plots(
         subjects = pairs
     for subject in subjects:
         # list isc volumes by subject or subject/task
-        if average != "subject":
+        if average == "task":
             isc_volumes = _list_averaging_taskwise(
                 data_dir, tasks, subject, kind, slices
+            )
+        elif average == "all":
+            isc_volumes = _list_averaging_everything(
+                data_dir, kind
             )
         else:
             isc_volumes = _list_averaging_subjectwise(data_dir, subject, kind)
         # plot left hemisphere
         for idx, average_isc in enumerate(isc_volumes):
-            if slices:
+            if slices is True:
                 fig_title = f"{subject} {task} segment {idx:02d}"
-            elif average != "subject":
+            elif average == "task":
                 fig_title = f"{subject} {task}"
                 fn = str(
                     f"{figures_dir}/{task}/"
                     f"mosaic_surfplot_{kind}"
                     f"ISC_on_{task}seg{idx:02d}_{subject}.png"
                 )
-            else:
+            elif average == "subject":
                 fig_title = ""
                 fn = str(
                     f"{figures_dir}/"
                     f"mosaic_surfplot_{kind}"
                     f"ISC_on_all_{subject}.png"
                 )
-            kw = {"cbar_vmin": 0}
+            else:
+                fig_title = ""
+                fn = str(
+                    f"{figures_dir}/"
+                    f"mosaic_surfplot_{kind}"
+                    f"ISC_on_all_every-sub.png"
+                )
             plotting.plot_img_on_surf(
                 average_isc,
                 fsaverage,
+                title=fig_title,
                 views=views,
                 hemispheres=hemi,
                 vmax=vmax,
@@ -146,6 +168,9 @@ def mosaic_surface_isc_plots(
                 os.mkdir(f"{figures_dir}/{task}/")
                 plt.savefig(fn, bbox_inches="tight", dpi=300)
             plt.close("all")
+            if average == "all":
+                logger.INFO("Finished saving figure for all average")
+                break
 
 
 @click.command()
