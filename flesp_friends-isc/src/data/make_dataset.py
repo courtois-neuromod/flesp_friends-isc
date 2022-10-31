@@ -47,11 +47,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
         masked_imgs = maskers.inverse_transform(cleaned)
     # Derive ROIs signal
     elif roi is True:
-        difumo = fetch_atlas_difumo(
-            dimension=256,
-            resolution_mm=2,
-            legacy_format=False,
-        )
+        difumo = fetch_atlas_difumo(dimension=256, resolution_mm=2, legacy_format=False)
         masked_imgs = []
         maskers = NiftiMapsMasker(
             maps_img=difumo.maps,
@@ -221,7 +217,7 @@ def main(input_filepath, output_filepath, roi=False):
         ]
     )
     if roi is True:
-        output_filepath = f'{output_filepath}-roi'
+        output_filepath = f"{output_filepath}-roi"
     logger.info(f"Iterating through episodes : {episodes[:5]}...")
     # iterate through episodes
     for task_name in episodes:

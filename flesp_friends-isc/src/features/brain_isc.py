@@ -45,7 +45,9 @@ def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
                     # Map the ISC data for the first participant into brain space
                     isc_vol[coords] = isc_seg[counter, :]
                     # make a nii image of the isc map
-                    isc_nifti = nib.Nifti1Image(isc_vol, brain_nii.affine, brain_nii.header)
+                    isc_nifti = nib.Nifti1Image(
+                        isc_vol, brain_nii.affine, brain_nii.header
+                    )
                     if not os.path.exists(f"{isc_map_path}/{task}"):
                         os.mkdir(f"{isc_map_path}/{task}")
 
@@ -118,7 +120,7 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False):
             if roi is False:
                 sliced = nib.Nifti1Image(timeserie[:, :, :, slx], affine)
             else:
-                sliced = timeserie[slx,:]
+                sliced = timeserie[slx, :]
             # append sliced timeserie from 1 sub
             imgs_sub.append(sliced)
         # associate to key in dict for 1 sub
@@ -193,7 +195,9 @@ def map_isc(
 
         # do not compute if less than totality of considered subs
         if len(files) != 6:
-            logger.info(f"{task} is left out because only {len(files)} files accessible")
+            logger.info(
+                f"{task} is left out because only {len(files)} files accessible"
+            )
             continue
         # Parcel space or not
         if roi is True:
@@ -256,7 +260,7 @@ def map_isc(
                         isc_seg = isc(bold_imgs, pairwise=pairwise)
                         isc_imgs.append(isc_seg)
                 else:
-                    for bold_ts in masked_imgs:                        
+                    for bold_ts in masked_imgs:
                         isc_seg = isc(bold_ts, pairwise=pairwise)
                         isc_imgs.append(isc_seg)
         elif kind == "spatial":

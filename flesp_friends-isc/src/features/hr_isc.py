@@ -80,11 +80,15 @@ def hr_isc(postproc_path, isc_hr_path, tasks=ok_task, length=30):
             if len(segment) < length / 2:
                 continue
             # computing HR-ISC
-            hr_isc_r_values = isc(segment.values, pairwise=False)
+            if kind == "pw":
+                pw = True
+            else:
+                pw = False
+            hr_isc_r_values = isc(segment.values, pairwise=pw)
 
             coeffs[f"{task}seg{i:02d}"] = hr_isc_r_values.flatten()
 
-    coeffs.to_csv(f"{isc_hr_path}/hr_isc_segments{length}tr.csv")
+    coeffs.to_csv(f"{isc_hr_path}/{kind}_hr_isc_segments{length}tr.csv")
 
 
 if __name__ == "__main__":

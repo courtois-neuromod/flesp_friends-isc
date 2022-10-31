@@ -11,7 +11,7 @@ import numpy as np
 import nibabel as nib
 import fnmatch
 
-fsaverage = fetch_surf_fsaverage(mesh='fsaverage')
+fsaverage = fetch_surf_fsaverage(mesh="fsaverage")
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_mask = nib.load(mask_name)
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
@@ -58,6 +58,7 @@ def _list_averaging_taskwise(data_dir, tasks, subject, kind, slices):
 
         logger.info("Averaged BOLD images")
     return isc_volumes
+
 
 @click.command()
 @click.argument("data_dir", type=click.Path(exists=True))
@@ -127,15 +128,15 @@ def mosaic_surface_isc_plots(
                     f"ISC_on_all_{subject}.png"
                 )
             kw = {"cbar_vmin": 0}
-            plotting.plot_img_on_surf( 
-                    average_isc,
-                    fsaverage,
-                    views=views,
-                    hemispheres=hemi,
-                    vmax=vmax,      
-                    threshold=threshold,
-                    cmap="magma",
-                )
+            plotting.plot_img_on_surf(
+                average_isc,
+                fsaverage,
+                views=views,
+                hemispheres=hemi,
+                vmax=vmax,
+                threshold=threshold,
+                cmap="magma",
+            )
             if os.path.exists(fn):
                 os.remove(fn)
             try:
@@ -145,6 +146,7 @@ def mosaic_surface_isc_plots(
                 os.mkdir(f"{figures_dir}/{task}/")
                 plt.savefig(fn, bbox_inches="tight", dpi=300)
             plt.close("all")
+
 
 @click.command()
 @click.argument("data_dir", type=click.Path(exists=True))
@@ -259,11 +261,7 @@ def surface_isc_plots(
                 view=view,
                 title=fig_title,
             )
-            plt.savefig(
-                fn_right,
-                bbox_inches="tight",
-                dpi=300,
-            )
+            plt.savefig(fn_right, bbox_inches="tight", dpi=300)
             del texture
             plt.close("all")
 
@@ -326,12 +324,7 @@ def plot_corr_mtx(data_dir, mask_img=brain_mask, kind="temporal"):
 @click.option("--kind", type=str)
 @click.option("--slices", type=bool)
 def plot_axial_slice(
-    data_dir,
-    figures_dir,
-    tasks=tasks,
-    taskwise=False,
-    kind="temporal",
-    slices=False,
+    data_dir, figures_dir, tasks=tasks, taskwise=False, kind="temporal", slices=False
 ):
     """
     Plot axial slice.

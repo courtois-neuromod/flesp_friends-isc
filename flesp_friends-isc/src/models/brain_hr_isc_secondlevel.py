@@ -22,9 +22,7 @@ brain_nii = nib.load(mask_name)
 brain_mask = io.load_boolean_mask(mask_name)
 
 
-def create_model_input(
-    isc_path, seg_len, pairwise=False, threshold=None,
-):
+def create_model_input(isc_path, seg_len, pairwise=False, threshold=None):
     """Build data dictionaries."""
     logger = logging.getLogger(__name__)
     subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
@@ -52,12 +50,12 @@ def create_model_input(
             ).dropna(axis=1)
         hr_brain_segment_list = []
         segments_to_remove = []
-        second_level_input = [] 
-        for directory in sorted(glob.glob(f"{isc_path}{seg_len}/*"))[60:]: 
+        second_level_input = []
+        for directory in sorted(glob.glob(f"{isc_path}{seg_len}/*"))[60:]:
             task_name = os.path.split(directory)[1]
             scan_segments_list = sorted(
                 glob.glob((f"{isc_path}{seg_len}/{task_name}/{sub}*"))
-            ) 
+            )
             # Make sure subject has proper files
             if scan_segments_list == []:
                 logger.info(f"no file for {sub} in {task_name}")
@@ -125,7 +123,7 @@ def compute_model_contrast(
 
     # list models coeffs and niimg filenames
     brain_isc_dict, hr_isc_dict = create_model_input(
-        f"{isc_path}", seg_len, pairwise, threshold=threshold,
+        f"{isc_path}", seg_len, pairwise, threshold=threshold
     )
     logger.info("Created data dictionaries")
     # initializing results
