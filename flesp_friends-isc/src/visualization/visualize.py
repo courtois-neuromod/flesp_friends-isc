@@ -384,7 +384,6 @@ def plot_axial_slice(
         plotting.plot_stat_map(
             average,
             threshold=0.2,
-            vmin=0,
             vmax=1,
             cmap="magma",
             draw_cross=True,
