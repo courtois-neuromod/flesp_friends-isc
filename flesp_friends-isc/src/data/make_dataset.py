@@ -10,7 +10,7 @@ import pprintpp
 import numpy as np
 import pandas as pd
 from nilearn.maskers import NiftiMasker, MultiNiftiMasker, NiftiMapsMasker
-from nilearn.datasets import fetch_atlas_difumo
+from nilearn.datasets import fetch_atlas_difumo, fetch_atlas_schaefer_2018
 from nilearn.interfaces.fmriprep import load_confounds_strategy
 import nibabel as nib
 
@@ -47,7 +47,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
         masked_imgs = maskers.inverse_transform(cleaned)
     # Derive ROIs signal
     elif roi is True:
-        difumo = fetch_atlas_difumo(dimension=256, resolution_mm=2, legacy_format=False)
+        difumo = fetch_atlas_schaefer(n_rois = 1000, yeo_networks=17, resolution_mm=1)
         masked_imgs = []
         maskers = NiftiMapsMasker(
             maps_img=difumo.maps,
@@ -169,7 +169,7 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm, roi):
     # print the shape
     for i, img in enumerate(masked_images):
         sub = os.path.basename(fnames[i])[4:6]
-        print(f"Task : {task_name} \n" f"Subject ID: {sub} \n" f"shape:{np.shape(img)}")
+        print(f"Task : {task_name}\n Subject ID: {sub} \n shape:{np.shape(img)}")
 
     tmpl = f"space-MNI152NLin2009cAsym_desc-fwhm{fwhm}"
     if roi is True:
@@ -229,7 +229,7 @@ def main(input_filepath, output_filepath, roi=False):
         masks.sort()
         process_episodewise(fnames, output_filepath, task_name, masks, fwhm=6, roi=roi)
         logger.info(
-            f"Done processing : {task_name} \n" "---------------------------------"
+            f"Done processing : {task_name} \n------------------------"
         )
 
 
