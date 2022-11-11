@@ -14,6 +14,7 @@ from brainiak import io
 from nilearn.glm import threshold_stats_img
 from nilearn import plotting
 from nilearn.datasets import fetch_surf_fsaverage, fetch_atlas_difumo
+from nilearn.maskers import NiftiMapsMasker
 import itertools
 
 fsaverage = fetch_surf_fsaverage()
