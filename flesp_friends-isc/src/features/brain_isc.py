@@ -127,12 +127,11 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False):
     """    
     masked_imgs = []
     sub_sliced = {}
-    masker = Nif
+    masker = NiftiLabelsMasker(mask_name)
     # Fetch images
     for i, processed in enumerate(files):
         if roi is False:
-            img = nib.load(processed)
-            timeserie = img.get_fdata()
+            timeserie = masker.fit_transform(processed)
             timeserie_len = timeserie.shape[3]
         else:
             timeserie = processed
