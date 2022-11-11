@@ -10,7 +10,7 @@ import pprintpp
 import numpy as np
 import pandas as pd
 from nilearn.maskers import NiftiMasker, MultiNiftiMasker, NiftiMapsMasker
-from nilearn.datasets import fetch_atlas_difumo, fetch_atlas_schaefer_2018
+from nilearn.datasets import fetch_atlas_difumo
 from nilearn.interfaces.fmriprep import load_confounds_strategy
 import nibabel as nib
 
@@ -47,10 +47,10 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
         masked_imgs = maskers.inverse_transform(cleaned)
     # Derive ROIs signal
     elif roi is True:
-        schaefer = fetch_atlas_schaefer(n_rois = 1000, yeo_networks=17, resolution_mm=1)
+        difumo = fetch_atlas_difumo(dimension=256, resolution_mm=2, legacy_format=False)
         masked_imgs = []
         maskers = NiftiMapsMasker(
-            maps_img=schaefer.maps,
+            maps_img=difumo.maps,
             t_r=1.49,
             standardize=False,
             detrend=True,
@@ -169,11 +169,11 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm, roi):
     # print the shape
     for i, img in enumerate(masked_images):
         sub = os.path.basename(fnames[i])[4:6]
-        print(f"Task : {task_name}\n Subject ID: {sub} \n shape:{np.shape(img)}")
+        print(f"Task : {task_name} \n" f"Subject ID: {sub} \n" f"shape:{np.shape(img)}")
 
     tmpl = f"space-MNI152NLin2009cAsym_desc-fwhm{fwhm}"
     if roi is True:
-        tmpl = "Schaefer1000_YeoNetwork17"
+        tmpl = "difumo256"
 
     del confs
     for i, img in enumerate(masked_images):
@@ -190,12 +190,7 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm, roi):
         except AttributeError:
             postproc_fname = str(f"{task_name}/{sub}_{task_name}_{tmpl}.npy")
             fn = os.path.join(f"{output_filepath}", postproc_fname)
-            try:
-                np.save(fn, img)
-            except FileNotFoundError:
-                os.mkdir(f"{output_filepath}/{task_name}")
-                np.save(fn, img)
-                
+            np.save(fn, img)
         print(f"Saved {sub}, {task_name} under: {fn}")
     return postproc_fname
 
@@ -221,6 +216,8 @@ def main(input_filepath, output_filepath, roi=False):
             :, 0
         ]
     )
+    if roi is True:
+        output_filepath = f"{output_filepath}-roi"
     logger.info(f"Iterating through episodes : {episodes[:5]}...")
     # iterate through episodes
     for task_name in episodes:
@@ -232,7 +229,7 @@ def main(input_filepath, output_filepath, roi=False):
         masks.sort()
         process_episodewise(fnames, output_filepath, task_name, masks, fwhm=6, roi=roi)
         logger.info(
-            f"Done processing : {task_name} \n------------------------"
+            f"Done processing : {task_name} \n" "---------------------------------"
         )
 
 

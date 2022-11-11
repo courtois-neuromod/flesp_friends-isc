@@ -9,49 +9,36 @@ import numpy as np
 from brainiak.isc import isc, isfc
 from brainiak import image, io
 import nibabel as nib
-from nilearn.datasets import fetch_atlas_schaefer_2018
-from nilearn.maskers import NiftiLabelsMasker
 
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
-atlas = fetch_atlas_schaefer_2018(n_rois=1000, yeo_networks=17, resolution_mm=1)
+
 
 # mask and info
-#mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
-mask_name = atlas.maps
+mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_mask = io.load_boolean_mask(mask_name)
 brain_nii = nib.load(mask_name)
 coords = np.where(brain_mask)
 
 
 def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
-    """internal function that save img stat map of isc.
-
-    Args:
-        isc_imgs (list of img_obj): _description_
-        isc_map_path (Path): Path to base dir
-        task (str): name of task
-        kind (str): type of ISC
-        files (list of str): list of file paths
-        roi (bool): whether or no
-    """
-
+    """ """
     logger = logging.getLogger(__name__)
     # save ISC maps per pairs of subject
     for idx_seg, isc_seg in enumerate(isc_imgs):
         counter = 0
-        for n_pair, file_fn in enumerate(files):
-            _, sub_a = os.path.split(file_fn)
-            for m_pair in range(n_pair + 1, len(files)):
-                _, sub_b = os.path.split(files[m_pair])
+        for n, fn in enumerate(files):
+            _, sub_a = os.path.split(fn)
+            for m in range(n + 1, len(files)):
+                _, sub_b = os.path.split(files[m])
                 logger.info(f"Segment {idx_seg:02d} | {sub_a[:6]} | {sub_b[:6]}")
                 pair = f"{sub_a[:6]}" + f"-{sub_b[:6]}"
                 if roi is True:
-                    fn_npy = f"{pair}_{task}seg{idx_seg:02d}ROI{kind}ISC.npy"
+                    fn = f"{pair}_{task}seg{idx_seg:02d}ROI{kind}ISC.npy"
                     try:
-                        np.save(f"{isc_map_path}/{task}/{fn_npy}", isc_seg[counter, :])
+                        np.save(f"{isc_map_path}/{task}/{fn}", isc_seg[counter, :])
                     except FileNotFoundError:
                         os.mkdir(f"{isc_map_path}/{task}/")
-                        np.save(f"{isc_map_path}/{task}/{fn_npy}", isc_seg[counter, :])
+                        np.save(f"{isc_map_path}/{task}/{fn}", isc_seg[counter, :])
                 else:
                     # Make the ISC output a volume
                     isc_vol = np.zeros(brain_nii.shape)
@@ -72,16 +59,7 @@ def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
 
 
 def _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
-    """internal function to save ISC stat maps computed LOO.
-
-    Args:
-        isc_imgs (list): _description_
-        isc_map_path (path): _description_
-        task (st): _description_
-        kind (str): _description_
-        files (list): _description_
-        roi (bool): _description_
-    """    
+    """ """
     logger = logging.getLogger(__name__)
     # save ISC maps per subject
     for n, fn in enumerate(files):
@@ -92,12 +70,13 @@ def _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
         # iterate through segments
         for idx, isc_seg in enumerate(isc_imgs):
             if roi is True:
-                fn_npy = f"{sub[:6]}_{task}seg{idx:02d}ROI{kind}ISC.npy"
+                fn = f"{sub[:6]}_{task}seg{idx:02d}ROI{kind}ISC.npy"
                 try:
-                    np.save(f"{isc_map_path}/{task}/{fn_npy}", isc_seg[n, :])
+                    np.save(f"{isc_map_path}/{task}/{fn}", isc_seg[n, :])
                 except FileNotFoundError:
                     os.mkdir(f"{isc_map_path}/{task}/")
-                    np.save(f"{isc_map_path}/{task}/{fn_npy}", isc_seg[n, :])
+                    np.save(f"{isc_map_path}/{task}/{fn}", isc_seg[n, :])
+                continue
             else:
                 # Map the ISC data for each participant into 3d space
                 isc_vol[coords] = isc_seg[n, :]
@@ -107,31 +86,25 @@ def _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
                 if not os.path.exists(f"{isc_map_path}/{task}"):
                     os.mkdir(f"{isc_map_path}/{task}")
 
-                fn_nii = f"{sub[:6]}_{task}seg{idx:02d}_{kind}ISC.nii.gz"
+                fn = f"{sub[:6]}_{task}seg{idx:02d}_{kind}ISC.nii.gz"
 
-                nib.save(isc_nifti, f"{isc_map_path}/{task}/{fn_nii}")
+                nib.save(isc_nifti, f"{isc_map_path}/{task}/{fn}")
 
 
 def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False):
-    """Slice BOLD timeseries.
+    """
+    Slice 4D timeseries.
 
-    Args:
-        files (_type_): input files from each sub
-        lng (_type_): length of time window
-        affine (_type_, optional): shape of niimg. Defaults to brain_nii.affine.
-        roi (bool, optional): whether or not in files are ROIs. Defaults to False.
-
-    Returns:
-        list of img_objs or list of 4D numpy.arrays: the former if voxel-based,
-        the latter if ROIs is True. 
-    """    
+    vars
+    """
     masked_imgs = []
     sub_sliced = {}
-    masker = NiftiLabelsMasker(mask_name)
+
     # Fetch images
     for i, processed in enumerate(files):
         if roi is False:
-            timeserie = masker.fit_transform(processed)
+            img = nib.load(processed)
+            timeserie = img.get_fdata()
             timeserie_len = timeserie.shape[3]
         else:
             timeserie = processed
@@ -187,23 +160,13 @@ def map_isc(
     drop=None,
     slices=False,
     lng=100,
+    stat_test=False,
 ):
-    """Main function to compute ISC maps
+    """
+    Compute ISC for brain data.
 
-    Args:
-        postproc_path (_type_): Path to processed data,
-        input dir.
-        isc_map_path (bool): Path to ISC maps data, output dir.
-        kind (str, optional): kind of ISC to compute. Defaults to "temporal".
-        pairwise (bool, optional): Approach to compute ISC. Defaults to False.
-        roi (bool, optional): Whether or not the data is arranged in ROIs.
-        Defaults to False.
-        drop (str, optional): bids format sub ID to remove sub from analysis.
-        Defaults to None.
-        slices (bool, optional): whether or not to slice timeseries.
-        Defaults to False.
-        lng (int, optional): the length of time window to slice. Defaults to 100.
-    """    
+    note
+    """
     # specify data path (leads to subdi
     logger = logging.getLogger(__name__)
     logger.info(f"Starting {kind} ISC workflow")
@@ -223,7 +186,7 @@ def map_isc(
         else:
             fn_to_remove = fnmatch.filter(files, f"*{drop}*")
             logger.info(
-                f"Not considering all subjects for ISCs \n Removing : {fn_to_remove}"
+                f"Not considering all subjects for ISCs \n" f"Removing : {fn_to_remove}"
             )
             files.remove(fn_to_remove[0])
         for fn in files:
@@ -231,7 +194,7 @@ def map_isc(
             logger.info(fn[:6])
 
         # do not compute if less than totality of considered subs
-        if len(files) < 2:
+        if len(files) != 6:
             logger.info(
                 f"{task} is left out because only {len(files)} files accessible"
             )
