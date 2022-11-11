@@ -169,7 +169,7 @@ def mosaic_surface_isc_plots(
                 plt.savefig(fn, bbox_inches="tight", dpi=300)
             plt.close("all")
             if average == "all":
-                logger.INFO("Finished saving figure for all average")
+                logger.INFO("Finished saving figure for all")
                 break
 
 
