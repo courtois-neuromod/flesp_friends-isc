@@ -13,13 +13,14 @@ import nibabel as nib
 from brainiak import io
 from nilearn.glm import threshold_stats_img
 from nilearn import plotting
-from nilearn.datasets import fetch_surf_fsaverage
+from nilearn.datasets import fetch_surf_fsaverage, fetch_atlas_difumo
 import itertools
 
 fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_nii = nib.load(mask_name)
 brain_mask = io.load_boolean_mask(mask_name)
+difumo = fetch_atlas_difumo(dimension=256, resolution_mm=1)
 
 
 def create_model_input(isc_path, seg_len, pairwise=False, threshold=None):
@@ -101,7 +102,7 @@ def create_model_input(isc_path, seg_len, pairwise=False, threshold=None):
 @click.option("--threshold", type=float)
 @click.option("--roi", type=bool)
 def compute_model_contrast(
-    isc_path, out_dir, seg_len="30", pairwise=False, threshold=None
+    isc_path, out_dir, seg_len="30", pairwise=False, threshold=None, roi=False,
 ):
     """Compute and save HR-ISC regressed Brain-ISC maps"""
     logger = logging.getLogger(__name__)
