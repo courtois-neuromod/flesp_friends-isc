@@ -51,7 +51,7 @@ def create_model_input(isc_path, seg_len, pairwise=False, threshold=None):
         hr_brain_segment_list = []
         segments_to_remove = []
         second_level_input = []
-        for directory in sorted(glob.glob(f"{isc_path}{seg_len}/*"))[60:]:
+        for directory in sorted(glob.glob(f"{isc_path}{seg_len}/*")):
             task_name = os.path.split(directory)[1]
             scan_segments_list = sorted(
                 glob.glob((f"{isc_path}{seg_len}/{task_name}/{sub}*"))
@@ -68,8 +68,7 @@ def create_model_input(isc_path, seg_len, pairwise=False, threshold=None):
                         glob.glob(
                             f"{isc_path}{seg_len}/{task_name}/"
                             f"{sub}*{task_name}seg"
-                            f"{idx:02d}_"
-                            f"temporalISC.nii.gz"
+                            f"{idx:02d}*"
                         )[0]
                     )
         for segment in sub_hr_coeffs.columns:
@@ -100,6 +99,7 @@ def create_model_input(isc_path, seg_len, pairwise=False, threshold=None):
 @click.option("--seg_len", type=str)
 @click.option("--pairwise", type=bool)
 @click.option("--threshold", type=float)
+@click.option("--roi", type=bool)
 def compute_model_contrast(
     isc_path, out_dir, seg_len="30", pairwise=False, threshold=None
 ):
@@ -143,13 +143,19 @@ def compute_model_contrast(
             design_matrix,
             output_file=f"{out_dir}/{map_name}_{seg_len}TRs/{sub}_design-matrix.png",
         )
+        if roi is True:
+            maskers = NiftiMapsMasker(difumo.maps).fit()
+            masked_imgs = []
+            for filename in brain_isc_dict[sub]:
+                vol = np.load(filename)
+                masked_imgs.append(maskers.inverse_transform(vol))
+            brain_isc_dict[sub] = masked_imgs
         logger.info("created design matrix")
         model = SecondLevelModel(smoothing_fwhm=6).fit(
             brain_isc_dict[sub], design_matrix=design_matrix
         )
         logger.info("fitted model")
         stat_map = model.compute_contrast("r_coeffs", output_type="all")
-
         logger.info(f"Computed model contrast for {sub}")
 
         # model results
