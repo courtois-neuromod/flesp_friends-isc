@@ -1,3 +1,4 @@
+# pylint: disable=logging-format-interpolation
 """Brain-ISC workflow."""
 import os
 import click
@@ -21,7 +22,9 @@ coords = np.where(brain_mask)
 
 
 def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
-    """ """
+    """
+    Pairwise save function isc volumes either as numpy arrays or nifti file
+    """
     logger = logging.getLogger(__name__)
     # save ISC maps per pairs of subject
     for idx_seg, isc_seg in enumerate(isc_imgs):
@@ -59,7 +62,9 @@ def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
 
 
 def _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
-    """ """
+    """
+    Subject-wise save function isc volumes either as numpy arrays of nifti files
+    """
     logger = logging.getLogger(__name__)
     # save ISC maps per subject
     for n, fn in enumerate(files):
@@ -159,28 +164,35 @@ def map_isc(
     roi=False,
     drop=None,
     slices=False,
-    lng=100,
-    stat_test=False,
+    lng=30,
 ):
-    """
-    Compute ISC for brain data.
+    """Load timeseries, slice them, compute ISCs and save timeseries
 
-    note
-    """
+    Args:
+        postproc_path (_type_):root path/to/postprocessed_data
+        isc_map_path (bool): root path/to/save
+        kind (str, optional): NOTE: develop spatial option.. Defaults to "temporal".
+        pairwise (bool, optional):  Defaults to False.
+        roi (bool, optional): if we compute ISC on region-of-interest data, we load numpy arrays. Defaults to False.
+        drop (_type_, optional): subject to drop. Defaults to None.
+        slices (bool, optional): timeseries segmentation. Defaults to False.
+        lng (int, optional): length of segmentation. Defaults to 30.
+    """    
     # specify data path (leads to subdi
     logger = logging.getLogger(__name__)
     logger.info(f"Starting {kind} ISC workflow")
     tasks = glob.glob(f"{postproc_path}/*/")
 
     # walks subdirs with taks name (task-s01-e01a)
-    for idx_task, task in enumerate(sorted(tasks)):
+    for task in sorted(tasks):
         task = task[-13:-1]
         logger.info("Importing data")
+        # fetch files
         if roi is True:
             files = sorted(glob.glob(f"{postproc_path}/{task}/*256.npy"))
         else:
             files = sorted(glob.glob(f"{postproc_path}/{task}/*.nii.gz*"))
-
+        # log subjects
         if drop is None:
             logger.info("Considering all subjects for ISCs")
         else:
@@ -193,8 +205,8 @@ def map_isc(
             _, fn = os.path.split(fn)
             logger.info(fn[:6])
 
-        # do not compute if less than totality of considered subs
-        if len(files) != 6:
+        # do not compute if alone
+        if len(files) == 1:
             logger.info(
                 f"{task} is left out because only {len(files)} files accessible"
             )
@@ -240,6 +252,7 @@ def map_isc(
             f"Computing {kind} ISC on {task}\n"
             "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         )
+        # log the method
         if pairwise:
             logger.info(f"{kind} ISC with pairwise approach")
         else:
@@ -270,12 +283,13 @@ def map_isc(
             continue
 
         logger.info("Saving images")
+        # save data
         if pairwise is False:
             _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi)
             # free up memory
             del bold_imgs, isc_imgs
 
-        # if it's not pairwise
+        # if it's pairwise
         else:
             _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files, roi)
             # free up memory

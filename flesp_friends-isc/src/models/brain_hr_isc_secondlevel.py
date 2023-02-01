@@ -134,7 +134,7 @@ def compute_model_contrast(
     coords_size = []
     coords_var = []
     variance = []
-
+    maskers = NiftiMapsMasker(difumo.maps).fit()
     for sub in subjects:
         design_matrix = make_second_level_design_matrix(
             hr_isc_dict[sub]["subject_label"], hr_isc_dict[sub]
@@ -146,7 +146,6 @@ def compute_model_contrast(
             output_file=f"{out_dir}/{map_name}_{seg_len}TRs/{sub}_design-matrix.png",
         )
         if roi is True:
-            maskers = NiftiMapsMasker(difumo.maps).fit()
             masked_imgs = []
             for filename in brain_isc_dict[sub]:
                 vol = np.load(filename)
@@ -231,6 +230,3 @@ if __name__ == "__main__":
     # load up the .env entries as environment variables
     load_dotenv(find_dotenv())
     compute_model_contrast()
-"""Brain-HR-ISC workflow."""
-import os
-import logging
