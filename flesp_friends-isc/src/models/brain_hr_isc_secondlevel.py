@@ -21,7 +21,7 @@ fsaverage = fetch_surf_fsaverage()
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_nii = nib.load(mask_name)
 brain_mask = io.load_boolean_mask(mask_name)
-difumo = fetch_atlas_difumo(dimension=256, resolution_mm=1)
+difumo = fetch_atlas_difumo(dimension=256)
 
 
 def create_model_input(isc_path, seg_len, pairwise=False, threshold=None):
@@ -39,6 +39,7 @@ def create_model_input(isc_path, seg_len, pairwise=False, threshold=None):
     hr_coeffs = pd.read_csv(
         f"/scratch/flesp/physio_data/{fname}{seg_len}.csv", index_col=0
     )
+    logger.info(hr_coeffs.head())
     brain_isc_dict = {}
     hr_isc_dict = {}
     for sub in subjects:
@@ -111,7 +112,7 @@ def compute_model_contrast(
     # defining pairs if not subjects
     if pairwise is True:
         fname = "pw_isc_hr_coeffs-seg"
-        map_name = "splitb_pw_segments"
+        map_name = "pw_roi_segments"
         if threshold is not None:
             map_name += f"_threshold{str(threshold)}"
         pairs = []
@@ -134,7 +135,7 @@ def compute_model_contrast(
     coords_size = []
     coords_var = []
     variance = []
-
+    maskers = NiftiMapsMasker(difumo.maps).fit()
     for sub in subjects:
         design_matrix = make_second_level_design_matrix(
             hr_isc_dict[sub]["subject_label"], hr_isc_dict[sub]
@@ -145,19 +146,21 @@ def compute_model_contrast(
             design_matrix,
             output_file=f"{out_dir}/{map_name}_{seg_len}TRs/{sub}_design-matrix.png",
         )
+        logger.info('created design matrix')
         if roi is True:
-            maskers = NiftiMapsMasker(difumo.maps).fit()
             masked_imgs = []
             for filename in brain_isc_dict[sub]:
                 vol = np.load(filename)
                 masked_imgs.append(maskers.inverse_transform(vol))
+                logger.info(f'masking {filename}')
             brain_isc_dict[sub] = masked_imgs
-        logger.info("created design matrix")
-        model = SecondLevelModel(smoothing_fwhm=6).fit(
+
+        model = SecondLevelModel(smoothing_fwhm=6, n_jobs=-1).fit(
             brain_isc_dict[sub], design_matrix=design_matrix
         )
+        #n_voxels = np.sum(get_data(model.masker_.mask_img_))
         logger.info("fitted model")
-        stat_map = model.compute_contrast("r_coeffs", output_type="all")
+        stat_map = model.compute_contrast("r_coeffs", output_type="all")       
         logger.info(f"Computed model contrast for {sub}")
 
         # model results
@@ -178,7 +181,7 @@ def compute_model_contrast(
             stat_map["z_score"],
             alpha=0.05,
             height_control="fpr",
-            cluster_threshold=10,
+            cluster_threshold=30,
             two_sided=True,
         )
         fdr_map, fdr_threshold = threshold_stats_img(
@@ -188,11 +191,17 @@ def compute_model_contrast(
             cluster_threshold=10,
             two_sided=True,
         )
+
         view = plotting.view_img_on_surf(
             thresholded_map, threshold=threshold, surf_mesh="fsaverage"
         )
         view_fdr = plotting.view_img_on_surf(
             fdr_map, threshold=fdr_threshold, surf_mesh="fsaverage"
+        )
+        
+        nib.save(
+            stat_map['p_value'],
+            f"{out_dir}/{map_name}_{seg_len}TRs/{sub}_HR-Brain-ISC_p-map.nii.gz",
         )
 
         nib.save(

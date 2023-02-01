@@ -194,7 +194,7 @@ def map_isc(
             logger.info(fn[:6])
 
         # do not compute if less than totality of considered subs
-        if len(files) != 6:
+        if len(files) < 2:
             logger.info(
                 f"{task} is left out because only {len(files)} files accessible"
             )

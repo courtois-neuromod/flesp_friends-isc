@@ -186,9 +186,11 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm, roi):
             nib.save(img, fn)
         except FileNotFoundError:
             os.mkdir(f"{output_filepath}/{task_name}")
-            nib.save(img, fn)
+            np.save(fn, img)
         except AttributeError:
             postproc_fname = str(f"{task_name}/{sub}_{task_name}_{tmpl}.npy")
+            if not os.path.exists(f"{output_filepath}/{task_name}"):
+                os.mkdir(f"{output_filepath}/{task_name}")
             fn = os.path.join(f"{output_filepath}", postproc_fname)
             np.save(fn, img)
         print(f"Saved {sub}, {task_name} under: {fn}")
@@ -216,11 +218,9 @@ def main(input_filepath, output_filepath, roi=False):
             :, 0
         ]
     )
-    if roi is True:
-        output_filepath = f"{output_filepath}-roi"
     logger.info(f"Iterating through episodes : {episodes[:5]}...")
     # iterate through episodes
-    for task_name in episodes:
+    for task_name in episodes[100:]:
         logger.info(f"Processing : {task_name}")
         # list data as dict values for each sub and each item is episode
         fnames = fnmatch.filter(nifti_names, f"*{task_name}*")
