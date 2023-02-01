@@ -14,7 +14,8 @@ import fnmatch
 fsaverage = fetch_surf_fsaverage(mesh="fsaverage")
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_mask = nib.load(mask_name)
-subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
+subjects = ["sub-01"]
+#, "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
 episodes = glob.glob("/scratch/flesp/data/pw_isc-segments30/*/")
 tasks = []
 for task in sorted(episodes):
@@ -38,8 +39,8 @@ def _list_averaging_subjectwise(data_dir, subject, kind):
     """
     logger = logging.getLogger(__name__)
     logger.info(f"averaging all tasks from {subject}")
-    isc_files = sorted(glob.glob(f"{data_dir}/*/{subject}*.nii.gz"))
-    isc_files = fnmatch.filter(isc_files, f"*{kind}*")
+    isc_files = sorted(glob.glob(f"{data_dir}/{subject}*.nii.gz")) 
+    #isc_files = fnmatch.filter(isc_files, f"*{kind}*")
     isc_volumes = [image.mean_img(isc_files, verbose=5, n_jobs=-1)]
     logger.info("Averaged BOLD images")
 
@@ -155,7 +156,7 @@ def mosaic_surface_isc_plots(
                 title=fig_title,
                 views=views,
                 hemispheres=hemi,
-                vmax=vmax,
+                vmax=5,
                 threshold=threshold,
                 cmap="magma",
             )
@@ -424,7 +425,7 @@ if __name__ == "__main__":
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(level=logging.INFO, format=log_fmt)
-    mosaic_surface_isc_plots()
+    #mosaic_surface_isc_plots()
     surface_isc_plots()
     plot_corr_mtx()
     plot_axial_slice()
