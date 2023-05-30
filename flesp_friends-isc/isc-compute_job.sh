@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --account=rrg-pbellec
-#SBATCH --job-name=Sliced_ISC
-#SBATCH --output=./isc_maps_sliced_10.out
-#SBATCH --error=./isc_maps_sliced_10.err
-#SBATCH --time=10:00:00
+#SBATCH --job-name=LOO_Brain-ISC
+#SBATCH --output=./output_files/iscs.out
+#SBATCH --error=./error_files/iscs.err
+#SBATCH --time=16:00:00
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=64G
 #SBATCH --mail-type=ALL
@@ -11,4 +11,4 @@
 
 workon flesp_friends-isc
 cd flesp_friends-isc
-make features USER_OPTIONS="--roi False --kind temporal --pairwise False --slices True --lng 30"
+make features USER_OPTIONS="--roi False --kind temporal --pairwise True --slices True --lng 30"
