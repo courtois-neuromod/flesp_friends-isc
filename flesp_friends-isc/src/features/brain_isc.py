@@ -29,16 +29,20 @@ def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
     # save ISC maps per pairs of subject
     for idx_seg, isc_seg in enumerate(isc_imgs):
         counter = 0
+        # define pairs based on filenames
         for n, fn in enumerate(files):
             _, sub_a = os.path.split(fn)
             for m in range(n + 1, len(files)):
                 _, sub_b = os.path.split(files[m])
+                # log pair and segment
                 logger.info(f"Segment {idx_seg:02d} | {sub_a[:6]} | {sub_b[:6]}")
                 pair = f"{sub_a[:6]}" + f"-{sub_b[:6]}"
+                # save numpy array
                 if roi is True:
                     fn = f"{pair}_{task}seg{idx_seg:02d}ROI{kind}ISC.npy"
                     try:
                         np.save(f"{isc_map_path}/{task}/{fn}", isc_seg[counter, :])
+                    # create folder for episode if not exist
                     except FileNotFoundError:
                         os.mkdir(f"{isc_map_path}/{task}/")
                         np.save(f"{isc_map_path}/{task}/{fn}", isc_seg[counter, :])
@@ -74,10 +78,12 @@ def _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
         isc_vol = np.zeros(brain_nii.shape)
         # iterate through segments
         for idx, isc_seg in enumerate(isc_imgs):
+            # save numpy array
             if roi is True:
                 fn = f"{sub[:6]}_{task}seg{idx:02d}ROI{kind}ISC.npy"
                 try:
                     np.save(f"{isc_map_path}/{task}/{fn}", isc_seg[n, :])
+                # create folder for episode if not exist
                 except FileNotFoundError:
                     os.mkdir(f"{isc_map_path}/{task}/")
                     np.save(f"{isc_map_path}/{task}/{fn}", isc_seg[n, :])
@@ -107,14 +113,17 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False):
 
     # Fetch images
     for i, processed in enumerate(files):
+        # load image
         if roi is False:
             img = nib.load(processed)
             timeserie = img.get_fdata()
             timeserie_len = timeserie.shape[3]
+        # load numpy array
         else:
             timeserie = processed
             timeserie_len = int(len(timeserie))
         imgs_sub = []
+        # define range of slices
         if lng == 100:
             range_step = range(0, int(timeserie_len - lng), int(lng / 2))
         else:
@@ -130,6 +139,7 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False):
             imgs_sub.append(sliced)
         # associate to key in dict for 1 sub
         sub_sliced[i] = imgs_sub
+    
     # start by first segment in each subject and iterate
     for segment in range(len(sub_sliced[0])):
         ls_imgs = []
@@ -166,17 +176,29 @@ def map_isc(
     slices=False,
     lng=30,
 ):
-    """Load timeseries, slice them, compute ISCs and save timeseries
+    """
+    Load timeseries, slice them, compute ISCs and save timeseries.
 
-    Args:
-        postproc_path (_type_):root path/to/postprocessed_data
-        isc_map_path (bool): root path/to/save
-        kind (str, optional): NOTE: develop spatial option.. Defaults to "temporal".
-        pairwise (bool, optional):  Defaults to False.
-        roi (bool, optional): if we compute ISC on region-of-interest data, we load numpy arrays. Defaults to False.
-        drop (_type_, optional): subject to drop. Defaults to None.
-        slices (bool, optional): timeseries segmentation. Defaults to False.
-        lng (int, optional): length of segmentation. Defaults to 30.
+    Arguments:
+    ------------
+    postproc_path: str
+        Path to preprocessed data
+    isc_map_path: str
+        Path to save ISC maps
+    kind: str
+        Kind of ISC to compute (temporal, spatial, or both)
+    pairwise: bool
+        Compute pairwise ISC
+    roi: bool
+        Compute ISC on ROIs
+    drop: str
+        Drop subjects from ISC computation
+    slices: bool
+        Slice timeseries
+    lng: int
+        Length of timeseries to slice
+    
+    Saves ISC maps in nifti or numpy format
     """    
     # specify data path (leads to subdi
     logger = logging.getLogger(__name__)
@@ -265,6 +287,7 @@ def map_isc(
             # workflow for sliced timeseries
             else:
                 isc_imgs = []
+                # if we are in voxel space
                 if roi is False:
                     for niimg_obj in masked_imgs:
                         bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
@@ -272,14 +295,17 @@ def map_isc(
                         )
                         isc_seg = isc(bold_imgs, pairwise=pairwise)
                         isc_imgs.append(isc_seg)
+                # if we are in parcel space
                 else:
                     for bold_ts in masked_imgs:
                         isc_seg = isc(bold_ts, pairwise=pairwise)
                         isc_imgs.append(isc_seg)
+        # Spatial ISC workflow
         elif kind == "spatial":
             isc_imgs = isfc(bold_imgs, pairwise=pairwise)
+        # Cannot compute ISC of this kind yet
         else:
-            logger.info(f"Cannot compute {kind} ISC on {task}")
+            logger.info(f"Cannot compute {kind} ISC on {task}\n choose temporal or spatial")
             continue
 
         logger.info("Saving images")

@@ -29,7 +29,7 @@ def nifti_mask(scans, masks, confounds, fwhm, roi=False):
         An in-memory niimg
     mask: str
         The (brain) mask within which to process data.
-    confounds: np.ndarray
+    confounds: list of tsv files
         Any confounds to correct for in the cleaned data set.
     """
     # generic mask workflow
@@ -95,7 +95,8 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
 
     Return
     ----------
-    nifti_fnames, mask_fnames [list]: file names for all subjs
+    nifti_fnames, mask_fnames: lists of files
+        file names for all subjs
     """
     data_dict = {}
     subs = []
@@ -109,7 +110,7 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
             sessions.sort()
         data_dict[sub] = sessions
 
-    # Collect all file names
+    # Collect all file names in lists
     nifti_fnames = []
     mask_fnames = []
     for sub_dirs in data_dict:
@@ -130,7 +131,7 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
                 )
             )
     if verbose:
-        pprintpp.pprint(data_dict)
+        logger.info(pprintpp.pformat(data_dict))
 
     return nifti_fnames, mask_fnames
 
@@ -151,18 +152,16 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm, roi):
         output path
     fwhm : int
         smoothing parameter
-    roi [bool]: 
+    roi : bool 
         defaults to False, whether to process data ROI-wise
     """
-    # NOTE : consider making group assigments for bootsraps
-    # group_assignment_dict =
-    # {task_name: i for i, task_name in enumerate(episodes)}
+    logger = logging.getLogger(__name__)
     # loads confounds files
     confs = []
     for nii in fnames:
         conf = load_confounds_strategy(nii, denoise_strategy="simple", motion="basic")
         confs.append(conf)
-
+    # mask the images
     masked_images = nifti_mask(
         scans=fnames, masks=masks, confounds=confs, fwhm=fwhm, roi=roi
     )
@@ -170,36 +169,42 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm, roi):
     # print the shape
     for i, img in enumerate(masked_images):
         sub = os.path.basename(fnames[i])[4:6]
-        print(f"Task : {task_name} \n" f"Subject ID: {sub} \n" f"shape:{np.shape(img)}")
-
+        logger.info(f"Task : {task_name} \n" f"Subject ID: {sub} \n" f"shape:{np.shape(img)}")
+    # template name
     tmpl = f"space-MNI152NLin2009cAsym_desc-fwhm{fwhm}"
     if roi is True:
         tmpl = "difumo256"
-
+    # make space in memory
     del confs
+    # save the images
     for i, img in enumerate(masked_images):
         sub = os.path.basename(fnames[i])[:6]
         postproc_fname = str(f"{task_name}/{sub}_{task_name}_{tmpl}.nii.gz")
         fn = os.path.join(f"{output_filepath}", postproc_fname)
+        # save the nifti
         try:
             nib.save(img, fn)
+        # maybe no directory for the given episode segment
         except FileNotFoundError:
             os.mkdir(f"{output_filepath}/{task_name}")
             nib.save(img, fn)
+        # save ROI timeseries in numpy array
         except AttributeError:
             postproc_fname = str(f"{task_name}/{sub}_{task_name}_{tmpl}.npy")
             if not os.path.exists(f"{output_filepath}/{task_name}"):
                 os.mkdir(f"{output_filepath}/{task_name}")
             fn = os.path.join(f"{output_filepath}", postproc_fname)
             np.save(fn, img)
-        print(f"Saved {sub}, {task_name} under: {fn}")
+        # log the process
+        logger.info(f"Saved {sub}, {task_name} under: {fn}")
 
 
 @click.command()
 @click.argument("input_filepath", type=click.Path(exists=True))
 @click.argument("output_filepath", type=click.Path())
+@click.option("--verbose", type=bool)
 @click.option("--roi", type=bool)
-def main(input_filepath, output_filepath, roi=False):
+def main(input_filepath, output_filepath, verbose=True, roi=False):
     """
     Prepare dataset.
 
@@ -213,11 +218,13 @@ def main(input_filepath, output_filepath, roi=False):
         whether to postprocess using an atlas of regions
     """
     logger = logging.getLogger(__name__)
-    logger.info("making final data set from raw data")
+    logger.info("Making postprocessed dataset from raw data")
+    # define the project directory
     project_dir = Path(__file__).resolve().parents[2]
     data_dir = os.path.join(project_dir, input_filepath)
     logger.info(f"Looking for data in :{data_dir}")
-    nifti_names, mask_names = create_data_dictionary(data_dir, verbose=True)
+    # create data dictionary and get episode names
+    nifti_names, mask_names = create_data_dictionary(data_dir, verbose=verbose)
     episodes = list(
         pd.read_csv(f"{project_dir}/episodes.csv", delimiter=",", header=None).iloc[
             :, 0
@@ -225,13 +232,14 @@ def main(input_filepath, output_filepath, roi=False):
     )
     logger.info(f"Iterating through episodes : {episodes[:5]}...")
     # iterate through episodes
-    for task_name in episodes[271:]:
+    for task_name in episodes:
         logger.info(f"Processing : {task_name}")
-        # list data as dict values for each sub and each item is episode
+        # fetch filenames for the given episode
         fnames = fnmatch.filter(nifti_names, f"*{task_name}*")
         masks = fnmatch.filter(mask_names, f"*{task_name}*")
         fnames.sort()
         masks.sort()
+        # process the episode (this saves the data)
         process_episodewise(fnames, output_filepath, task_name, masks, fwhm=6, roi=roi)
         logger.info(
             f"Done processing : {task_name} \n" "---------------------------------"
