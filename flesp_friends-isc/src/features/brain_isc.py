@@ -173,7 +173,7 @@ def map_isc(
     tasks = glob.glob(f"{postproc_path}/*/")
 
     # walks subdirs with taks name (task-s01-e01a)
-    for idx_task, task in enumerate(sorted(tasks)):
+    for idx_task, task in enumerate(sorted(tasks)[233:]):
         task = task[-13:-1]
         logger.info("Importing data")
         if roi is True:

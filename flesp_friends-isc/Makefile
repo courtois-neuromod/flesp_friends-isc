@@ -27,16 +27,19 @@ requirements: test_environment
 
 ## Make Dataset
 data:
-	$(PYTHON_INTERPRETER) src/data/make_dataset.py /lustre03/project/rrg-pbellec/flesp/flesp_friends-isc/data/friends.fmriprep /scratch/flesp/data/processed-roi
-## Make features
+	$(PYTHON_INTERPRETER) src/data/make_dataset.py /lustre03/project/rrg-pbellec/flesp/flesp_friends-isc/data/friends.fmriprep /scratch/flesp/data/processed $(USER_OPTIONS)
+## Make feature0s
 features:
-	$(PYTHON_INTERPRETER) src/features/brain_isc.py /scratch/flesp/data/processed /scratch/flesp/data/isc-segments30 $(USER_OPTIONS)
+	$(PYTHON_INTERPRETER) src/features/brain_isc.py /scratch/flesp/data/processed /scratch/flesp/data/pw_isc-segments30 $(USER_OPTIONS)
+## Make features x2
+more_features:
+	$(PYTHON_INTERPRETER) src/features/brain_isc.py /scratch/flesp/data/processed-roi /scratch/flesp/data/pw_isc-roi_segments30 $(USER_OPTIONS)
 ## Make figures
 figures:
 	$(PYTHON_INTERPRETER) src/visualization/visualize.py /scratch/flesp/data/pw_isc-segments30 /scratch/flesp/figures/pw_isc-segments30 $(USER_OPTIONS)
-## Make second_level model
+# Make second_level model
 model:
-		$(PYTHON_INTERPRETER) src/models/brain_hr_isc_secondlevel.py /scratch/flesp/data/isc-segments30 /scratch/flesp/data/second_level_models $(USER_OPTIONS)
+	$(PYTHON_INTERPRETER) src/models/brain_hr_isc_secondlevel.py /scratch/flesp/data/pw_isc-segments /scratch/flesp/data/second_level_models $(USER_OPTIONS)
 ## Delete all compiled Python files
 clean:
 	find . -type f -name "*.py[co]" -delete

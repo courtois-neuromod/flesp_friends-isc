@@ -90,7 +90,8 @@ def create_data_dictionary(data_dir, sessions=None, verbose=False):
 
     Parameters
     ----------
-    data_dir_ [str]: the data root dir
+    data_dir: str
+        the data root dir
 
     Return
     ----------
@@ -144,14 +145,14 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm, roi):
 
     Parameters
     ----------
-    fnames [list]:
+    fnames :list
         returned by create_data_dictionary
-    output_filepath [path]:
+    output_filepath :path
         output path
-    fwhm [int]:
+    fwhm : int
         smoothing parameter
-    roi [bool]: False
-        whether to process data ROI-wise
+    roi [bool]: 
+        defaults to False, whether to process data ROI-wise
     """
     # NOTE : consider making group assigments for bootsraps
     # group_assignment_dict =
@@ -181,12 +182,10 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm, roi):
         postproc_fname = str(f"{task_name}/{sub}_{task_name}_{tmpl}.nii.gz")
         fn = os.path.join(f"{output_filepath}", postproc_fname)
         try:
-            postproc_fname = str(f"{task_name}/{sub}_{task_name}_{tmpl}.nii.gz")
-            fn = os.path.join(f"{output_filepath}", postproc_fname)
             nib.save(img, fn)
         except FileNotFoundError:
             os.mkdir(f"{output_filepath}/{task_name}")
-            np.save(fn, img)
+            nib.save(img, fn)
         except AttributeError:
             postproc_fname = str(f"{task_name}/{sub}_{task_name}_{tmpl}.npy")
             if not os.path.exists(f"{output_filepath}/{task_name}"):
@@ -194,7 +193,6 @@ def process_episodewise(fnames, output_filepath, task_name, masks, fwhm, roi):
             fn = os.path.join(f"{output_filepath}", postproc_fname)
             np.save(fn, img)
         print(f"Saved {sub}, {task_name} under: {fn}")
-    return postproc_fname
 
 
 @click.command()
@@ -206,6 +204,13 @@ def main(input_filepath, output_filepath, roi=False):
     Prepare dataset.
 
     I/O function to process all episodes.
+
+    input_filepath: path
+        datalad path
+    output_filepath: path
+        scratch path
+    roi : bool
+        whether to postprocess using an atlas of regions
     """
     logger = logging.getLogger(__name__)
     logger.info("making final data set from raw data")
@@ -220,7 +225,7 @@ def main(input_filepath, output_filepath, roi=False):
     )
     logger.info(f"Iterating through episodes : {episodes[:5]}...")
     # iterate through episodes
-    for task_name in episodes[100:]:
+    for task_name in episodes[271:]:
         logger.info(f"Processing : {task_name}")
         # list data as dict values for each sub and each item is episode
         fnames = fnmatch.filter(nifti_names, f"*{task_name}*")

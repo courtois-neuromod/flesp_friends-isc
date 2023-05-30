@@ -14,8 +14,7 @@ import fnmatch
 fsaverage = fetch_surf_fsaverage(mesh="fsaverage")
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_mask = nib.load(mask_name)
-subjects = ["sub-01"]
-#, "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
+subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
 episodes = glob.glob("/scratch/flesp/data/pw_isc-segments30/*/")
 tasks = []
 for task in sorted(episodes):
@@ -425,7 +424,7 @@ if __name__ == "__main__":
     # NOTE: from command line `make_dataset input_data output_filepath`
     log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(level=logging.INFO, format=log_fmt)
-    #mosaic_surface_isc_plots()
+    mosaic_surface_isc_plots()
     surface_isc_plots()
     plot_corr_mtx()
     plot_axial_slice()
