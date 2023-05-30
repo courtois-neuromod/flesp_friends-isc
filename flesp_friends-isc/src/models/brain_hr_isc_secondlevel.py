@@ -240,6 +240,3 @@ if __name__ == "__main__":
     # load up the .env entries as environment variables
     load_dotenv(find_dotenv())
     compute_model_contrast()
-"""Brain-HR-ISC workflow."""
-import os
-import logging
