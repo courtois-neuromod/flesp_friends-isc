@@ -38,7 +38,7 @@ def _list_averaging_subjectwise(data_dir, subject, kind):
     """
     logger = logging.getLogger(__name__)
     logger.info(f"averaging all tasks from {subject}")
-    isc_files = sorted(glob.glob(f"{data_dir}/{subject}*.nii.gz")) 
+    isc_files = sorted(glob.glob(f"{data_dir}/*/{subject}*.nii.gz")) 
     #isc_files = fnmatch.filter(isc_files, f"*{kind}*")
     isc_volumes = [image.mean_img(isc_files, verbose=5, n_jobs=-1)]
     logger.info("Averaged BOLD images")
