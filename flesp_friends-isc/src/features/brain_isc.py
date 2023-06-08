@@ -171,6 +171,15 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False, events
     """
     masked_imgs = []
     sub_sliced = {}
+    # define slices for events
+    if event is True:
+        # load events file
+        task_filename_pattern = files[0].split("_")[1]
+        task_filename_pattern = task_filename_pattern.split("-s0")[-1]
+        event_file = fnmatch.filter(glob.glob(f"{events_files_path}*/*manualseg.tsv"),f"*{task_filename_pattern}*")[0]
+        events = pd.read_csv(event_file, sep='\t')
+    else:
+        events = None
 
     # Fetch images
     for i, processed in enumerate(files):
@@ -189,14 +198,6 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False, events
             range_step = range(0, int(timeserie_len - lng), int(lng / 2))
         else:
             range_step = range(0, int(timeserie_len - lng), lng)
-        if event is True:
-            # load events file
-            task_filename_pattern = processed.split("_")[1]
-            task_filename_pattern = task_filename_pattern.split("-s0")[-1]
-            event_file = fnmatch.filter(glob.glob(f"{events_files_path}*/*manualseg.tsv"),f"*{task_filename_pattern}*")[0]
-            events = pd.read_csv(event_file, sep='\t')
-        else:
-            events = None
         # slice them subject-wise
         sub_sliced[i] = __slice_timeseries_subjectwise(timeserie, affine, range_step, events)
     # start by first segment in each subject and iterate
