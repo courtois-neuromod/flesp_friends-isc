@@ -138,7 +138,8 @@ def __slice_timeseries_subjectwise(timeserie, affine, range_step, events=None):
     else:
         onsets = events['onset'].values
         durations = events['duration'].values
-        for onset, duration in zip(onsets, durations):
+        valid_idx = np.where(durations>=45)
+        for onset, duration in zip(onsets[valid_idx], durations[valid_idx]):
             onset_idx = int(round(onset / TR))
             duration_idx = int(round(duration / TR))
             sliced = timeserie[:, :, :, onset_idx:onset_idx+duration_idx-1]
