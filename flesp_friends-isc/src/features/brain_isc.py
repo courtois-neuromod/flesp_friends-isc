@@ -10,15 +10,37 @@ import numpy as np
 from brainiak.isc import isc, isfc
 from brainiak import image, io
 import nibabel as nib
+import pandas as pd
 
 subjects = ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06"]
-
+TR=1.49
+events_files_path = "~/projects/rrg-pbellec/flesp_captions-embeddings/friends_annotations/annotation_results/manual_segmentation/"
 
 # mask and info
 mask_name = "tpl-MNI152NLin2009cAsym_res-02_desc-brain_mask.nii.gz"
 brain_mask = io.load_boolean_mask(mask_name)
 brain_nii = nib.load(mask_name)
 coords = np.where(brain_mask)
+
+def load_events(events_file):
+    """
+    Loads event onsets and durations from a TSV file.
+
+    Parameters
+    ----------
+    events_file : str
+        Path to the TSV file containing the event information.
+
+    Returns
+    -------
+    events : ndarray, shape (n_events, 2)
+        Array containing the event onsets and durations.
+    """
+    events_df = pd.read_csv(events_file, sep='\t')
+    onsets = events_df['onset'].values
+    durations = events_df['duration'].values
+    events = np.column_stack((onsets, durations))
+    return events
 
 
 def _save_pair_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
@@ -101,12 +123,50 @@ def _save_sub_feature_img(isc_imgs, isc_map_path, task, kind, files, roi):
 
                 nib.save(isc_nifti, f"{isc_map_path}/{task}/{fn}")
 
+def __slice_timeseries_subjectwise(timeserie, affine, range_step, events=None):
+    """
+    Slices a 4D timeseries along the 4th dimension according to a range step.
+    If events are provided, slices the timeseries according to the event onsets and durations.
+    """
+    # slice them based on arbiratry range step
+    if events is None:
+        for idx in range_step:
+            slx = slice(0 + idx, timeserie.shape[3] + idx)
+            sliced = nib.Nifti1Image(timeserie[:, :, :, slx], affine)
+            imgs_sub.append(sliced)
+    # slice them based on manual scene segmentation events
+    else:
+        onsets = events['onset'].values
+        durations = events['duration'].values
+        for onset, duration in zip(onsets, durations):
+            onset_idx = int(round(onset / TR))
+            duration_idx = int(round(duration / TR))
+            sliced = timeserie[:, :, :, onset_idx:onset_idx+duration_idx-1]
+            sliced = nib.Nifti1Image(sliced, affine)
+            imgs_sub.append(sliced)
+    # associate to key in dict for 1 sub
+    return imgs_sub
 
-def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False):
+def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False, events=None):
     """
     Slice 4D timeseries.
 
-    vars
+    Parameters
+    ----------
+    files : list
+        List of files to be sliced.
+    lng : int
+        Length of the slice.
+    affine : array
+        Affine matrix of the image.
+    roi : bool
+        If True, the input is a numpy array.
+    events : bool
+        If True, the input is a numpy array.
+    Returns
+    -------
+    masked_imgs : list
+        List of sliced images.
     """
     masked_imgs = []
     sub_sliced = {}
@@ -122,24 +182,22 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False):
         else:
             timeserie = processed
             timeserie_len = int(len(timeserie))
-        imgs_sub = []
-        # define range of slices
+        # define range of slices, make overlaps with step size of half the length for
+        # this specific segment length
         if lng == 100:
             range_step = range(0, int(timeserie_len - lng), int(lng / 2))
         else:
             range_step = range(0, int(timeserie_len - lng), lng)
+        if event is True:
+            # load events file
+            task_filename_pattern = processed.split("_")[1]
+            task_filename_pattern = task_filename_pattern.split("-s0")[-1]
+            event_file = fnmatch.filter(glob.glob(f"{events_files_path}*/*manualseg.tsv"),f"*{task_filename_pattern}*")[0]
+            events = pd.read_csv(event_file, sep='\t')
+        else:
+            events = None
         # slice them subject-wise
-        for idx in range_step:
-            slx = slice(0 + idx, lng + idx)
-            if roi is False:
-                sliced = nib.Nifti1Image(timeserie[:, :, :, slx], affine)
-            else:
-                sliced = timeserie[slx, :]
-            # append sliced timeserie from 1 sub
-            imgs_sub.append(sliced)
-        # associate to key in dict for 1 sub
-        sub_sliced[i] = imgs_sub
-    
+        sub_sliced[i] = __slice_timeseries_subjectwise(timeserie, affine, range_step, events)
     # start by first segment in each subject and iterate
     for segment in range(len(sub_sliced[0])):
         ls_imgs = []
@@ -166,6 +224,7 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False):
 @click.option("--drop", type=str)
 @click.option("--slices", type=bool)
 @click.option("--lng", type=int)
+@click.option("--events", type=bool)
 def map_isc(
     postproc_path,
     isc_map_path,
@@ -246,7 +305,7 @@ def map_isc(
         # Option to segment run in smaller windows
         elif slices is True and roi is False:
             logger.info(f"Segmenting in slices of length {lng} TRs")
-            masked_imgs = _slice_img_timeseries(files, lng)
+            masked_imgs = _slice_img_timeseries(files, lng, events=events)
 
         # mask the whole run
         elif roi is False and slices is False:
@@ -287,7 +346,7 @@ def map_isc(
             # workflow for sliced timeseries
             else:
                 isc_imgs = []
-                # if we are in voxel space
+                # if we are in voxel space 
                 if roi is False:
                     for niimg_obj in masked_imgs:
                         bold_imgs = image.MaskedMultiSubjectData.from_masked_images(
