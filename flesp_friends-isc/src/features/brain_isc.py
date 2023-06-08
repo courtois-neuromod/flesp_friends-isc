@@ -196,8 +196,10 @@ def _slice_img_timeseries(files, lng, affine=brain_nii.affine, roi=False, events
         # this specific segment length
         if lng == 100:
             range_step = range(0, int(timeserie_len - lng), int(lng / 2))
-        else:
+        elif lng == 30:
             range_step = range(0, int(timeserie_len - lng), lng)
+        else:
+            range_step = None
         # slice them subject-wise
         sub_sliced[i] = __slice_timeseries_subjectwise(timeserie, affine, range_step, events)
     # start by first segment in each subject and iterate
